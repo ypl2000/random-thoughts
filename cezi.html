@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>《测字有术》技术干货总集</title>
+<style>
+:root{
+  --paper:#f7f4ed; --card:#fffdf8; --side:#f1ecdf; --ink:#2b2620; --ink2:#6f6558;
+  --accent:#9d3b2d; --accent-soft:#f3e3de; --gold:#8a6d3b; --line:#e3dcc9; --cite:#b9ac95;
+  --serif:"Noto Serif SC","Source Han Serif SC","STZhongsong","SimSun",serif;
+  --sans:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.75;font-size:15.5px}
+
+/* ---------- 出处:默认隐藏,开关控制 ---------- */
+.cite{font-size:.76em;color:var(--cite);font-family:Consolas,monospace;border:1px solid var(--line);
+  border-radius:4px;padding:0 4px;margin-left:4px;white-space:nowrap;display:none;vertical-align:1px}
+body.cites .cite{display:inline-block}
+li.src-li{display:none;margin:0}
+body.cites li.src-li{display:list-item}
+
+/* ---------- 侧边栏 ---------- */
+#sidebar{position:fixed;inset:0 auto 0 0;width:280px;background:var(--side);border-right:1px solid var(--line);
+  padding:20px 16px;overflow-y:auto;z-index:50;transition:transform .25s ease}
+.brand{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:1px}
+.brand em{color:var(--accent);font-style:normal}
+.brand-sub{font-size:12px;color:var(--ink2);margin-bottom:14px}
+.searchwrap{position:relative;margin-bottom:12px}
+#q{width:100%;padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);
+  font-size:13.5px;outline:none;color:var(--ink)}
+#q:focus{border-color:var(--accent)}
+#qclear{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:none;
+  color:var(--ink2);cursor:pointer;font-size:15px;display:none;padding:2px 5px}
+#hits{background:var(--card);border:1px solid var(--line);border-radius:8px;margin:-6px 0 12px;
+  max-height:300px;overflow-y:auto;display:none;font-size:13px}
+.hit{padding:7px 11px;border-bottom:1px dashed var(--line);cursor:pointer;line-height:1.5}
+.hit:last-child{border-bottom:none}
+.hit:hover{background:var(--accent-soft)}
+.hit .where{color:var(--accent);font-size:11.5px;display:block}
+.hit mark{background:#f5d76e;padding:0 1px}
+#hitcount{padding:6px 11px;color:var(--ink2);font-size:12px;background:var(--side);position:sticky;top:0}
+.togglerow{display:flex;align-items:center;gap:8px;margin:2px 2px 14px;font-size:13px;color:var(--ink2);cursor:pointer;user-select:none}
+.togglerow input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+nav#toc .navgroup{margin-bottom:11px}
+.nav1{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-weight:700;font-size:14px;
+  color:var(--ink);text-decoration:none;padding:5px 6px;border-radius:6px}
+.nav1:hover{background:var(--accent-soft)}
+.nav1 .han{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;flex:none;
+  background:var(--accent);color:#fff;border-radius:5px;font-size:11.5px;font-family:var(--serif)}
+.navkids{display:none;padding:2px 0 2px 29px}
+.navgroup.expanded .navkids{display:block}
+.nav2{display:block;font-size:12.6px;color:var(--ink2);text-decoration:none;padding:2.5px 6px;border-left:2px solid transparent}
+.nav2:hover{color:var(--accent)}
+.nav2.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.nav1.active{color:var(--accent)}
+.side-note{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--ink2);line-height:1.7}
+
+/* ---------- 主区 ---------- */
+#main{margin-left:280px;padding:0 0 80px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 36px}
+header.hero{padding:50px 0 26px;border-bottom:3px double var(--line);margin-bottom:34px}
+.hero h1{font-family:var(--serif);font-size:clamp(24px,3.4vw,34px);letter-spacing:2px;line-height:1.3}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12.5px;color:var(--gold);background:var(--card);border:1px solid var(--line);
+  border-radius:20px;padding:3px 12px}
+.chip.warn{color:var(--accent);border-color:#e6c3bb;background:var(--accent-soft)}
+.hero .desc{margin-top:13px;font-size:13.5px;color:var(--ink2);max-width:70em}
+
+/* 专题分节 */
+section.topic{margin-bottom:60px}
+.topic-head{display:flex;gap:16px;align-items:flex-start;padding:20px 22px;background:var(--card);
+  border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;margin-bottom:18px}
+.badge{flex:none;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:20px}
+.topic-head h2{font-family:var(--serif);font-size:22px;letter-spacing:1px}
+.topic-head .sub{font-size:13.5px;color:var(--gold);margin-top:2px}
+.topic-head .note{font-size:12.5px;color:var(--ink2);margin-top:4px}
+.localtoc{display:flex;flex-wrap:wrap;gap:7px;margin:0 4px 20px}
+.localtoc a{font-size:12.3px;color:var(--ink2);text-decoration:none;background:var(--card);
+  border:1px solid var(--line);border-radius:14px;padding:2.5px 11px}
+.localtoc a:hover{color:var(--accent);border-color:var(--accent)}
+
+/* 分类块:理论+案例同框 */
+.cat{margin:30px 0 8px}
+.cat>h3{font-family:var(--serif);font-size:19px;margin:0 0 10px;padding-left:11px;border-left:4px solid var(--accent);line-height:1.4}
+.cat .theory{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 20px;margin-bottom:14px}
+.cat>.cards-label{font-size:12.5px;color:var(--ink2);margin:0 2px 8px}
+
+/* 正文排版(理论块内) */
+.topic-body h3{font-family:var(--serif);font-size:19px;margin:30px 0 10px;padding-left:11px;border-left:4px solid var(--accent)}
+.topic-body h4{font-family:var(--serif);font-size:16px;margin:20px 0 7px;color:#4a3f33}
+.topic-body h5{font-size:14.5px;margin:15px 0 5px;color:var(--gold)}
+.topic-body p{margin:8px 0}
+.topic-body ul,.topic-body ol{margin:8px 0 8px 24px}
+.topic-body li{margin:4px 0}
+.topic-body hr{border:none;border-top:1px dashed var(--line);margin:24px 0}
+.topic-body blockquote{margin:12px 0;padding:9px 16px;background:var(--card);border-left:3px solid var(--gold);
+  border-radius:0 8px 8px 0;color:#54493b}
+.topic-body blockquote p{margin:4px 0}
+code{background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:1px 6px;font-size:.9em}
+a.xref{color:var(--accent);font-weight:600}
+.tscroll{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;background:var(--card);font-size:13.6px;min-width:520px}
+th,td{border:1px solid var(--line);padding:6px 11px;text-align:left;vertical-align:top}
+th{background:var(--side);font-family:var(--serif);color:#4a3f33;white-space:nowrap}
+tbody tr:nth-child(even){background:#faf7f0}
+
+/* ---------- 卡片墙 ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 4px 14px rgba(60,40,20,.1);transform:translateY(-1px)}
+.card .cc{font-size:11px;color:var(--cite);font-family:Consolas,monospace;position:absolute;top:9px;right:11px;display:none}
+body.cites .card .cc{display:block}
+.card .ct{font-weight:600;font-size:14.2px;margin-bottom:3px;padding-right:34px}
+.card .cg{font-size:13px;color:#5a5142;line-height:1.65}
+.card.mini{display:flex;align-items:center;justify-content:center;text-align:center;padding:13px 10px}
+.card.mini .ct{margin:0;padding:0;font-size:13.5px;font-weight:500}
+.card.quote{grid-column:span 1;border-left:3px solid var(--gold);font-family:var(--serif);color:#4a3f33}
+.charcard{text-align:center;padding:16px 12px 13px}
+.charcard .zi{font-family:var(--serif);font-size:38px;line-height:1.25;color:var(--accent);display:block}
+.charcard .cg{margin-top:7px;text-align:left}
+.mcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px 15px;text-align:center}
+.mcard .mn{font-family:var(--serif);font-size:19px;font-weight:700;color:var(--accent)}
+.mcard .mg{font-size:12.6px;color:#5a5142;margin-top:5px;line-height:1.6}
+.mcard .ms{font-size:13.5px;margin-top:6px;color:var(--ink)}
+.sig{display:flex;gap:10px;align-items:baseline}
+.sig .ct{flex:none;padding-right:0}
+.methods{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px}
+
+/* 搜索命中闪烁 */
+@keyframes flashbg{0%{background:#f5d76e}100%{background:transparent}}
+.flash{animation:flashbg 1.8s ease-out}
+
+#totop{position:fixed;right:26px;bottom:26px;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+  background:var(--card);color:var(--accent);font-size:17px;cursor:pointer;display:none;z-index:40;box-shadow:0 3px 10px rgba(0,0,0,.08)}
+#totop.show{display:block}
+#menubtn{display:none;position:fixed;left:14px;top:12px;z-index:60;width:40px;height:40px;border-radius:8px;
+  border:1px solid var(--line);background:var(--card);color:var(--accent);font-size:18px;cursor:pointer}
+#backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:45}
+footer.colophon{margin-top:60px;padding-top:18px;border-top:3px double var(--line);font-size:12.5px;color:var(--ink2);line-height:2}
+
+@media (max-width:960px){
+  #sidebar{transform:translateX(-100%)}
+  #sidebar.open{transform:none;box-shadow:8px 0 30px rgba(0,0,0,.15)}
+  #backdrop.show{display:block}
+  #menubtn{display:block}
+  #main{margin-left:0;padding-top:54px}
+  .wrap{padding:0 16px}
+  .cards{grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:9px}
+  .methods{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .card .ct{font-size:13.5px}.card .cg{font-size:12.5px}
+  .topic-head{padding:16px;gap:12px}.badge{width:38px;height:38px;font-size:17px}
+  table{min-width:440px}
+}
+@media print{
+  #sidebar,#totop,#menubtn,#backdrop{display:none!important}
+  #main{margin:0}
+  .cite,.card .cc{display:inline-block!important}
+}
+</style>
+</head>
+<body>
+<button id="menubtn" aria-label="打开目录">☰</button>
+<div id="backdrop"></div>
+
+<aside id="sidebar">
+  <div class="brand">测字有术 <em>·</em> 技术干货总集</div>
+  <div class="brand-sub">理论 + 案例卡片 · 一页查阅</div>
+  <div class="searchwrap">
+    <input id="q" type="search" placeholder="搜索:拆字 / 骨相 / 微表情…" autocomplete="off">
+    <button id="qclear" aria-label="清除">✕</button>
+  </div>
+  <div id="hits"><div id="hitcount"></div><div id="hitlist"></div></div>
+  <label class="togglerow"><input type="checkbox" id="citeToggle">显示章节出处</label>
+  <nav id="toc">
+    <div class="navgroup" data-for="sec-overview"><a class="nav1" href="#sec-overview"><span class="han">壹</span>商业处世与心法</a><div class="navkids"><a class="nav2" href="#qv-h1">第四卷：商业与处世技巧</a><a class="nav2" href="#qv-h2">第五卷：核心心法口诀</a><a class="nav2" href="#qv-h3">总结与索引</a></div></div>
+<div class="navgroup" data-for="sec-cezi"><a class="nav1" href="#sec-cezi"><span class="han">贰</span>测字专题</a><div class="navkids"><a class="nav2" href="#cz-shifa">测字十法</a><a class="nav2" href="#cz-cat-cr">首在察人</a><a class="nav2" href="#cz-cat-qz">取字方式</a><a class="nav2" href="#cz-cat-cz">拆字法 · 单字卡墙</a><a class="nav2" href="#cz-cat-bj">笔迹学</a><a class="nav2" href="#cz-cat-sz">数字字</a><a class="nav2" href="#cz-cat-zr">字与人</a></div></div>
+<div class="navgroup" data-for="sec-mianxiang"><a class="nav1" href="#sec-mianxiang"><span class="han">叁</span>面相专题</a><div class="navkids"><a class="nav2" href="#mx-cat-0">核心理论总纲</a><a class="nav2" href="#mx-cat-1">眉毛</a><a class="nav2" href="#mx-cat-2">眼睛</a><a class="nav2" href="#mx-cat-3">鼻子</a><a class="nav2" href="#mx-cat-4">嘴与嘴唇</a><a class="nav2" href="#mx-cat-5">耳朵</a><a class="nav2" href="#mx-cat-6">额头</a><a class="nav2" href="#mx-cat-7">下巴与地库</a><a class="nav2" href="#mx-cat-8">山根印堂颧骨</a><a class="nav2" href="#mx-cat-9">脸型与骨相</a><a class="nav2" href="#mx-cat-10">手与微表情</a><a class="nav2" href="#mx-cat-11">三庭五庭</a><a class="nav2" href="#mx-cat-12">相与命运</a><a class="nav2" href="#mx-cat-13">综合速查</a><a class="nav2" href="#mx-cat-14">口诀与总原则</a></div></div>
+<div class="navgroup" data-for="sec-charen"><a class="nav1" href="#sec-charen"><span class="han">肆</span>察人与商业专题</a><div class="navkids"><a class="nav2" href="#cr-cat-th">察人核心理论</a><a class="nav2" href="#cr-cat-micro">微表情速查</a><a class="nav2" href="#cr-cat-察人实战">察人实战</a><a class="nav2" href="#cr-cat-处世心法">处世心法</a><a class="nav2" href="#cr-cat-商业营销">商业营销</a></div></div>
+<div class="navgroup" data-for="sec-other"><a class="nav1" href="#sec-other"><span class="han">伍</span>其他杂项专题</a><div class="navkids"><a class="nav2" href="#ot-cat-0">一、手相</a><a class="nav2" href="#ot-cat-1">二、八字命理</a><a class="nav2" href="#ot-cat-2">三、风水地理</a><a class="nav2" href="#ot-cat-3">四、笔迹学</a><a class="nav2" href="#ot-cat-4">五、微表情 / 察人术
+
+## 理论
+
+1. **察人之术高于测字秘牒**</a><a class="nav2" href="#ot-cat-5">六、听声术</a><a class="nav2" href="#ot-cat-6">七、武功气功</a><a class="nav2" href="#ot-cat-7">八、医术与单方</a><a class="nav2" href="#ot-cat-8">九、算命衍生</a><a class="nav2" href="#ot-cat-9">十、魔术/玄术
+
+## 理论
+
+1. **魔术=手法+表演**</a><a class="nav2" href="#ot-cat-10">十一、商业识人术</a></div></div>
+  </nav>
+  <div class="side-note">章节出处默认隐藏,<br>勾选上方开关即可显示。</div>
+</aside>
+
+<main id="main"><div class="wrap">
+  <header class="hero">
+    <h1>《测字有术》<em>技术干货</em>总集</h1>
+    <div class="meta">
+      <span class="chip">5 个专题</span>
+      <span class="chip">干货卡片 175 张</span>
+      <span class="chip warn">出处已隐藏 · 侧栏可开关</span>
+    </div>
+    <p class="desc">按「分类 → 理论 + 对应案例卡片」重新编排:每类理论之下紧跟同类案例,拆字案例做成单字卡片墙。测字十法补自原书<span class="cite">第 4 章</span>。章节出处默认收起,需要回查原书时在侧边栏打开。</p>
+  </header>
+
+  <section class="topic" id="sec-overview"><header class="topic-head"><div class="badge">壹</div><div><h2>商业处世与心法</h2><p class="sub">全本总纲独有卷:处世技巧 · 核心口诀 · 全景索引</p><p class="note">测字 / 面相 / 杂项各卷已并入下方对应专题,此处只留总纲独有内容</p></div></header><nav class="localtoc"><a href="#qv-h1">第四卷：商业与处世技巧</a><a href="#qv-h2">第五卷：核心心法口诀</a><a href="#qv-h3">总结与索引</a></nav><div class="topic-body"><h2 id="qv-h1">第四卷：商业与处世技巧</h2>
+<h3 id="qv-h2">一、核心处世原则</h3>
+<h4 id="qv-h2">1. 人心两弱点<span class="cite">第 293 章</span></h4>
+<ul><li>一怕变心</li><li>二怕吃亏</li></ul>
+<h4 id="qv-h2">2. 成小功靠朋友，成大功靠敌人<span class="cite">第 446 章</span></h4>
+<h4 id="qv-h2">3. 谋事找有钱的，干事找缺钱的<span class="cite">第 641 章</span></h4>
+<h4 id="qv-h2">4. 与其春节去拜访，不如节前送年货<span class="cite">第 645 章</span></h4>
+<h4 id="qv-h2">5. 一定要站着提要求<span class="cite">第 352 章</span></h4>
+<h4 id="qv-h2">6. 捂着伤疤<span class="cite">第 605 章</span></h4>
+<ul><li>不要轻易让人看到你的伤疤</li><li>会疗伤的人少，撒盐的人很多</li></ul>
+<h4 id="qv-h2">7. 不要给邻居算命<span class="cite">第 627 章</span></h4>
+<p>为什么不要给邻居算命？</p>
+<h3 id="qv-h2">二、说话的艺术<span class="cite">第 508、640 章</span></h3>
+<h4 id="qv-h2">1. 转移框架<span class="cite">番外 25 章</span></h4>
+<ul><li>用相对论的方法化解对方的要求</li><li>让对方在不知不觉中接受你的说法</li></ul>
+<h4 id="qv-h2">2. 笑着骂人</h4>
+<ul><li>只要笑着骂，怎么骂都行</li><li>把真实感受骂出来</li><li>旁人看来大度宽容</li></ul>
+<h4 id="qv-h2">3. 骂人有气势有文采</h4>
+<ul><li>历数缺点</li><li>多用排比句</li></ul>
+<h4 id="qv-h2">4. 嘴甜<span class="cite">第 640 章</span></h4>
+<ul><li>嘴甜不是虚伪</li><li>是为了让自己少受罪</li></ul>
+<h4 id="qv-h2">5. 不急着接话</h4>
+<ul><li>诱惑对方先说</li><li>慢慢套出关键</li></ul>
+<h4 id="qv-h2">6. 保持微笑<span class="cite">第 637 章</span></h4>
+<ul><li>许多时候不要说话</li><li>保持微笑就行</li></ul>
+<h3 id="qv-h2">三、特定场景应对</h3>
+<h4 id="qv-h2">1. 酒桌技巧</h4>
+<ul><li>看人下菜碟</li><li>学会不喝醉地劝酒</li><li>酒桌上的察人</li></ul>
+<h4 id="qv-h2">2. 谈判桌技巧</h4>
+<ul><li>声东击西</li><li>把球踢回去</li><li>借力打力</li><li>欲擒故纵</li><li>保持沉默的压力</li></ul>
+<h4 id="qv-h2">3. 会议桌技巧</h4>
+<ul><li>气氛比讲话更重要<span class="cite">第 638 章</span></li><li>主动设定议程</li></ul>
+<h4 id="qv-h2">4. 相亲/约会</h4>
+<ul><li>看"美人尖"</li><li>看耳高于眼/低于眼</li><li>测字测感情</li></ul>
+<h4 id="qv-h2">5. 综艺/直播<span class="cite">第 509 章</span></h4>
+<ul><li>综艺节目：观众也是演员</li><li>互动式旅游<span class="cite">第 600 章</span></li></ul>
+<h3 id="qv-h2">四、人群分类与对策</h3>
+<h4 id="qv-h2">1. 寡妇与光棍的眉眼笑<span class="cite">第 308 章</span></h4>
+<p>寡妇光棍的对联故事</p>
+<h4 id="qv-h2">2. 自以为是型<span class="cite">第 45511 行</span></h4>
+<p>不断打断别人说话</p>
+<h4 id="qv-h2">3. 美女暮年综合症</h4>
+<p>美女+更年期</p>
+<h4 id="qv-h2">4. 掮客特征<span class="cite">第 61 章</span></h4>
+<ul><li>师父教辨掮客</li></ul>
+<h4 id="qv-h2">5. 二少爷：最不像骗子的骗子<span class="cite">第 68 章</span></h4>
+<p>有一种骗子最高明——看起来最不像</p>
+<h4 id="qv-h2">6. "人精"识别<span class="cite">第 92、96 章</span></h4>
+<ul><li>肖立明是人精</li><li>林美女砍价也是人精</li></ul>
+<h4 id="qv-h2">7. 早恋型<span class="cite">第 531 章</span></h4>
+<p>孩子早恋，一定要冷处理</p>
+<h4 id="qv-h2">8. 两极型性格<span class="cite">第 607 章</span></h4>
+<p>极端性格的表现</p>
+<h4 id="qv-h2">9. 私生子比较聪明漂亮<span class="cite">第 578 章</span></h4>
+<p>生理原因——基因组合差异</p>
+<h3 id="qv-h2">五、数字解读<span class="cite">番外 17 章</span></h3>
+<p>万山红对 0-9 的解读：</p>
+<ul><li>0：空、包容</li><li>1：开始、专一</li><li>2：双、对称</li><li>3：生发</li><li>4：稳定</li><li>5：中间</li><li>6：顺</li><li>7：变</li><li>8：发</li><li>9：极</li></ul>
+<h3 id="qv-h2">六、营销与创意<span class="cite">第 99、144 章</span></h3>
+<h4 id="qv-h2">1. 开工仪式<span class="cite">第 97 章</span></h4>
+<p>独创赚钱的"开工仪式"</p>
+<h4 id="qv-h2">2. 创意网购<span class="cite">第 512 章</span></h4>
+<p>创意网购，才能突围而出</p>
+<h4 id="qv-h2">3. 互动式旅游<span class="cite">第 600 章</span></h4>
+<p>互动式旅游，是未来新开发景观的亮点</p>
+<h4 id="qv-h2">4. 超市开到乡下<span class="cite">第 629 章</span></h4>
+<p>超市开到乡下，是抵抗电商的利器？</p>
+<h4 id="qv-h2">5. 鲶鱼效应<span class="cite">第 636 章</span></h4>
+<p>放几条鲶鱼，把这潭水搞活</p>
+<h4 id="qv-h2">6. 个人 IP 打造<span class="cite">第 436 章</span></h4>
+<p>如何打造个人 IP</p>
+<h4 id="qv-h2">7. 微表情与人设<span class="cite">第 401 章</span></h4>
+<p>为左清芬打造人设</p>
+<hr>
+<h2 id="qv-h2">第五卷：核心心法口诀</h2>
+<h3 id="qv-h3">一、万法归一：九五变<span class="cite">第 653 章</span></h3>
+<blockquote><p>测字、相面、风水、八字、手相、笔迹……所有技术最终都回归到一个核心：变化中找不变</p></blockquote>
+<h3 id="qv-h3">二、核心口诀</h3>
+<ol><li><strong>测字先察人，进门眼光定</strong><span class="cite">第 5 章</span></li><li><strong>字灵人自诚，执笔画则灵</strong><span class="cite">第 5 章</span></li><li><strong>加笔减笔皆有玄机</strong><span class="cite">第 5 章</span></li><li><strong>骨相在骨，皮相在皮</strong><span class="cite">第 232 章</span></li><li><strong>手是真实的脸</strong><span class="cite">第 569 章</span></li><li><strong>邪正看眼鼻，真假看嘴唇</strong>（曾国藩）</li><li><strong>功名看气概，富贵看精神</strong>（曾国藩）</li><li><strong>人心两弱点：一怕变心，二怕吃亏</strong><span class="cite">第 293 章</span></li><li><strong>成小功靠朋友，成大功靠敌人</strong><span class="cite">第 446 章</span></li><li><strong>谋事找有钱的，干事找缺钱的</strong><span class="cite">第 641 章</span></li><li><strong>笑着骂人，骂人不带脏字</strong><span class="cite">第 640 章</span></li><li><strong>气氛比讲话更重要</strong><span class="cite">第 638 章</span></li><li><strong>左病右治，右病左治</strong><span class="cite">第 583 章</span></li><li><strong>左短右长，阴宅阳宅同理</strong><span class="cite">第 290 章</span></li><li><strong>动静适宜，五行平衡</strong>（通用）</li></ol>
+<hr>
+<h2 id="qv-h3">总结与索引</h2>
+<h3 id="qv-h4">本书技术全景图</h3>
+<div class="tscroll"><table><thead><tr><th>技术大类</th><th>子项</th><th>主要章节</th></tr></thead><tbody><tr><td><strong>测字术</strong></td><td>测字十法、拆字、笔画加减、五行归属、借字、笔迹</td><td>3-12, 24, 164, 203, 234, 283, 298, 330, 340, 347, 355, 374, 397, 456, 462, 525, 535, 596, 643</td></tr><tr><td><strong>面相术</strong></td><td>骨相、皮相、五官、异相、三庭、脸型</td><td>5, 23, 36, 79, 86, 93, 102, 209, 232, 238, 251, 262, 283, 285, 286, 308, 310, 319, 338, 343, 385, 569, 570</td></tr><tr><td><strong>手相</strong></td><td>手指粗细、骨节、青筋</td><td>271, 511, 518, 569</td></tr><tr><td><strong>八字命理</strong></td><td>五行、童子命、逢九生变、婚配</td><td>22, 162-170, 226, 282, 286, 411, 544, 576, 番外18</td></tr><tr><td><strong>风水</strong></td><td>龙去脉、凤凰引路、灵物指穴、仙人掌、桌卦</td><td>22, 28, 63, 113, 182, 266, 271, 290, 318, 333, 539, 540</td></tr><tr><td><strong>笔迹学</strong></td><td>起笔收笔、笔锋、连笔、握笔</td><td>5, 59, 108, 212, 257</td></tr><tr><td><strong>微表情</strong></td><td>眉毛、笑容、姿态</td><td>308, 569</td></tr><tr><td><strong>听声术</strong></td><td>脚步声、走姿</td><td>35, 11950</td></tr><tr><td><strong>武功气功</strong></td><td>定身功、呼蛇功、听字术、顶水法、点穴、太极舞</td><td>22, 27, 137, 369, 370, 377, 546, 583, 589-590</td></tr><tr><td><strong>医术</strong></td><td>单方、针灸八法、手压法、正骨、食疗</td><td>8, 35, 105, 112, 183, 222, 309, 320, 349, 377, 402, 546</td></tr><tr><td><strong>算命衍生</strong></td><td>取名、生男生女、择日</td><td>36, 104, 162-170, 226, 269</td></tr><tr><td><strong>魔术</strong></td><td>搬运术、暖场</td><td>233, 624, 628</td></tr><tr><td><strong>商业识人</strong></td><td>谈判、营销、人设、IP</td><td>5, 9, 12, 17, 18, 25, 36, 43, 44, 57, 61, 68, 91, 92, 96, 97, 103, 401, 436, 475, 509, 518, 540, 605, 627, 636, 637, 638, 640, 641</td></tr></tbody></table></div>
+<h3 id="qv-h4">番外章节索引</h3>
+<div class="tscroll"><table><thead><tr><th>番外章</th><th>主题</th></tr></thead><tbody><tr><td><span class="cite">第 1 章</span></td><td>与你细说人生：浅说教养</td></tr><tr><td><span class="cite">第 2 章</span></td><td>天下事，先看大势</td></tr><tr><td><span class="cite">第 3 章</span></td><td>一看房间外形，便知主人家事</td></tr><tr><td><span class="cite">第 4 章</span></td><td>与男子论书画，我在养人</td></tr><tr><td><span class="cite">第 5 章</span></td><td>一个"离"字，我给她讲了半小时</td></tr><tr><td><span class="cite">第 13 章</span></td><td>知识就是金钱</td></tr><tr><td><span class="cite">第 15 章</span></td><td>国外高层住宅是如何防火的？</td></tr><tr><td><span class="cite">第 16 章</span></td><td>中国文字的统一性</td></tr><tr><td><span class="cite">第 17 章</span></td><td>十个数字，万山红有自己的解释</td></tr><tr><td><span class="cite">第 18 章</span></td><td>"贫穷富贵"的真正意义</td></tr><tr><td><span class="cite">第 25 章</span></td><td>与人相处的艺术之一</td></tr><tr><td><span class="cite">第 26 章</span></td><td>与人相处的艺术之二</td></tr><tr><td><span class="cite">第 27 章</span></td><td>与人相处的艺术之三</td></tr><tr><td><span class="cite">第 28 章</span></td><td>与人相处艺术之四</td></tr><tr><td><span class="cite">第 29 章</span></td><td>与人相处的艺术之五，之六</td></tr><tr><td><span class="cite">第 30 章</span></td><td>与人相处的艺术之七八九十</td></tr><tr><td><span class="cite">第 31 章</span></td><td>未来产业方向</td></tr><tr><td><span class="cite">第 41 章</span></td><td>人类文明与当下职业漫谈</td></tr><tr><td><span class="cite">第 42 章</span></td><td>告别2023，拥抱新的岁月</td></tr><tr><td><span class="cite">第 44 章</span></td><td>完结篇——茶中悟道</td></tr><tr><td>万法归一</td><td>九五变</td></tr></tbody></table></div>
+<hr>
+<blockquote><p><strong>整理说明</strong>：以上内容均从《测字有术》原书 676 章正文与 21 篇番外中提取，每条技巧与案例均标注原文章节号。完整原文细节请查阅原书。</p></blockquote>
+<blockquote><p><strong>输出文件</strong>：本总结另存于以下 4 个分卷文件：<br>- <code>技术总结_测字.md</code>（测字术专卷）<br>- <code>技术总结_面相.md</code>（面相术专卷）<br>- <code>技术总结_其他.md</code>（手相/八字/风水/笔迹/武功/医术/魔术专卷）<br>- <code>技术总结_察人商业.md</code>（察人识人/商业处世专卷）</p></blockquote>
+<blockquote><p><strong>核心人物链</strong>：主角万山红（学测字）→ 师父弘一道长（玄学全才）→ 弘原道长（单方体系）→ 释延峰（武术听字术）→ 苏西坡（医家脚步辨病）→ 舒老（针灸正骨）→ 常南溪（命理）→ 董先生（终极传人）</p></blockquote></div></section>
+<section class="topic" id="sec-cezi"><header class="topic-head"><div class="badge">贰</div><div><h2>测字专题</h2><p class="sub">测字技巧 · 单字卡片墙</p><p class="note">测字十法补自原书<span class="cite">第 4 章</span>;拆字案例做成单字卡片,一眼一断</p></div></header><nav class="localtoc"><a href="#cz-shifa">测字十法</a><a href="#cz-cat-cr">首在察人</a><a href="#cz-cat-qz">取字方式</a><a href="#cz-cat-cz">拆字法 · 单字卡墙</a><a href="#cz-cat-bj">笔迹学</a><a href="#cz-cat-sz">数字字</a><a href="#cz-cat-zr">字与人</a></nav><div class="topic-body"><div class="cat"><h3 id="cz-shifa">测字十法</h3><div class="methods"><div class="mcard"><span class="cc">1</span><div class="mn">装头</div><div class="mg">字头加笔,另成新字解</div></div><div class="mcard"><span class="cc">2</span><div class="mn">接脚</div><div class="mg">字脚加笔,另成新字解</div></div><div class="mcard"><span class="cc">3</span><div class="mn">穿心</div><div class="mg">字中穿入笔画,变字而解</div></div><div class="mcard"><span class="cc">4</span><div class="mn">包罗</div><div class="mg">外圈包裹笔画成新字(书中作“包龙”)</div></div><div class="mcard"><span class="cc">5</span><div class="mn">破解</div><div class="mg">拆破字形,分开解释</div></div><div class="mcard"><span class="cc">6</span><div class="mn">添笔</div><div class="mg">加笔成新字——示范:“立”添“十”成“辛”之上半,断婚姻“十分辛苦”</div></div><div class="mcard"><span class="cc">7</span><div class="mn">减笔</div><div class="mg">减去笔画,另成新字解</div></div><div class="mcard"><span class="cc">8</span><div class="mn">对关</div><div class="mg">劈分字头字尾,对关取字</div></div><div class="mcard"><span class="cc">9</span><div class="mn">摘字</div><div class="mg">从来人话语中摘取一字而测</div></div><div class="mcard"><span class="cc">10</span><div class="mn">观梅</div><div class="mg">随机观物取象,不动笔墨</div></div><div class="mcard"><div class="mn" style="font-size:15px">象形</div><div class="mg">补充取象之法</div></div><div class="mcard"><div class="mn" style="font-size:15px">会意</div><div class="mg">补充取象之法</div></div><div class="mcard"><div class="mn" style="font-size:15px">转注</div><div class="mg">补充取象之法</div></div></div><p style="font-size:12.6px;color:var(--ink2);margin-top:10px">十法名录为原书<span class="cite">第 4 章</span>主角所背(源自《测字秘牒》),各法释义按名称通解补写;书中现场示范两例——“信”字用拆字法、“立”字用添笔法,见下方字卡。</p></div><div class="cat"><h3 id="cz-cat-cr">首在察人</h3><div class="theory"><p>测字之术,首在察人——师父言:</p>
+<blockquote><p>“测字之术,首在察人,但只拿了一半的书给你读。”</p></blockquote>
+<ul><li><strong>察人比测字更难</strong>:测字尚有字可拆;察人要看出对方一二三,还得让对方承认</li><li><strong>进门第一眼</strong>:进门眼光不正者,多是踢馆/掮客</li><li><strong>察人两本书</strong>:《测字秘牒》之外还有《如何察人》,后者更难</li></ul></div><p class="cards-label">察人案例</p><div class="cards"><div class="card mini"><div class="ct">测字先察人——已婚已育,全凭眼力看出<span class="cc">5</span></div></div><div class="card mini"><div class="ct">一口咬定她是跳芭蕾舞的——体貌断职业<span class="cc">79</span></div></div><div class="card mini"><div class="ct">我会看走眼吗?<span class="cc">102</span></div></div><div class="card mini"><div class="ct">准确说出他的职业<span class="cc">450</span></div></div><div class="card mini"><div class="ct">人要有点城府<span class="cc">560</span></div></div></div></div><div class="cat"><h3 id="cz-cat-qz">取字方式</h3><div class="theory"><ul><li><strong>对方写字</strong>(最常见):让对方默写心中所想的字</li><li><strong>自取字</strong>:测字师心里默想一字,双方各占一字</li><li><strong>对方说字</strong>:口述一字,故有“测字别说出口”的防破译法</li><li><strong>借字</strong>:借卦象、借八字、借梦境</li><li><strong>随机取字</strong>:报数字对应一字(数字字)</li></ul></div><p class="cards-label">取字案例</p><div class="cards"><div class="card mini"><div class="ct">听字术:耳朵“听”字,有托/无托两种<span class="cc">27</span></div></div><div class="card mini"><div class="ct">测字别说出口——防提前破译<span class="cc">496</span></div></div><div class="card mini"><div class="ct">借卦象、八字、梦境取字<span class="cc">96</span></div></div></div></div><div class="cat"><h3 id="cz-cat-cz">拆字法 · 单字卡墙</h3><div class="theory"><ul><li><strong>按部件拆</strong>:把字拆成偏旁部首分别解释——“信”=人言,“出”=两山</li><li><strong>笔画加减</strong>:加笔成新字——“立”添两笔成“人人”;减笔同理</li><li><strong>字形结构</strong>:左右 / 上下 / 内外结构</li><li><strong>五行归属</strong>:按金木水火土对应——“宁”属火,方位必去南方</li><li><strong>借字法</strong>:借助外部事物的字义辅助判断</li></ul></div><p class="cards-label">单字拆解卡片(按原书章节排序)</p><div class="cards"><div class="card charcard"><span class="cc">3</span><span class="zi">想</span><div class="cg">起笔如“木”,棺材之像;“目”未闭——半月之内不会死</div></div><div class="card charcard"><span class="cc">4-5</span><span class="zi">信</span><div class="cg">人+言,他人之言——无主见,婚姻只开花不结果</div></div><div class="card charcard"><span class="cc">5·525</span><span class="zi">立</span><div class="cg">添“十”成“辛”上半——婚姻十分辛苦;缺两笔则“人人不成立”</div></div><div class="card charcard"><span class="cc">9</span><span class="zi">成</span><div class="cg">“厅”+“戈”——大动干戈</div></div><div class="card charcard"><span class="cc">24</span><span class="zi">出</span><div class="cg">两“山”相叠——盼女儿快点出嫁</div></div><div class="card charcard"><span class="cc">59</span><span class="zi">合</span><div class="cg">男子强势,合伙人占少</div></div><div class="card charcard"><span class="cc">59</span><span class="zi">玉</span><div class="cg">女子笔迹刚劲有力——毅力足,有条不紊</div></div><div class="card charcard"><span class="cc">164</span><span class="zi">晓</span><div class="cg">“日”+“尧”</div></div><div class="card charcard"><span class="cc">234</span><span class="zi">作</span><div class="cg">为吕导测</div></div><div class="card charcard"><span class="cc">283</span><span class="zi">秀</span><div class="cg">“禾”+“乃”</div></div><div class="card charcard"><span class="cc">298</span><span class="zi">带</span><div class="cg">难解风月</div></div><div class="card charcard"><span class="cc">330</span><span class="zi">来</span><div class="cg">详解“来”字,气氛变冷</div></div><div class="card charcard"><span class="cc">340</span><span class="zi">回</span><div class="cg">“口”+“口”</div></div><div class="card charcard"><span class="cc">347</span><span class="zi">忍</span><div class="cg">“刃”+“心”——从古至今没变过</div></div><div class="card charcard"><span class="cc">355</span><span class="zi">抽</span><div class="cg">病去如“抽”丝</div></div><div class="card charcard"><span class="cc">515</span><span class="zi">碗</span><div class="cg">“石”+“宛”——有病</div></div><div class="card charcard"><span class="cc">456</span><span class="zi">鲁</span><div class="cg">“鱼”+“日”</div></div><div class="card charcard"><span class="cc">462</span><span class="zi">初</span><div class="cg">“初”字作何解释</div></div><div class="card charcard"><span class="cc">535</span><span class="zi">承</span><div class="cg">跪着接受别人施舍</div></div><div class="card charcard"><span class="cc">596</span><span class="zi">迈</span><div class="cg">“万”+“亡”+“辶”</div></div><div class="card charcard"><span class="cc">643</span><span class="zi">千</span><div class="cg">话里有话</div></div><div class="card charcard"><span class="cc">番外5</span><span class="zi">离</span><div class="cg">一个“离”字讲了半小时</div></div><div class="card charcard"><span class="cc">576</span><span class="zi">去</span><div class="cg">甲骨文“人”+“口”——与张总合作双赢</div></div><div class="card charcard"><span class="cc">413</span><span class="zi">宁</span><div class="cg">五行属火——方位必去南方;有归宁之意</div></div><div class="card charcard"><span class="cc">212</span><span class="zi">火</span><div class="cg">起笔快,笔迹浅而连笔多</div></div><div class="card charcard"><span class="cc">212</span><span class="zi">因</span><div class="cg">写得慢,连笔少,一笔一划极为用力</div></div><div class="card charcard"><span class="cc">257</span><span class="zi">特</span><div class="cg">末笔力透纸背——杀伐果断</div></div><div class="card charcard"><span class="cc">108</span><span class="zi">赌</span><div class="cg">字形歪斜、心紧;决意的赌徒一气呵成</div></div></div></div><div class="cat"><h3 id="cz-cat-bj">笔迹学</h3><div class="theory"><ul><li><strong>笔画节奏与性格</strong>:起笔收笔的快慢断性情</li><li><strong>笔锋与人格</strong>:末笔力透纸背 = 杀伐果断</li><li><strong>笔迹辨真伪</strong>:识别字条是否本人所写</li><li><strong>连笔密度 / 握笔姿势 / 歪斜度</strong>均为观察点</li></ul></div><p class="cards-label">笔迹案例</p><div class="cards"><div class="card mini"><div class="ct">笔迹学绝招——“合”字断男子,“玉”字断女子<span class="cc">59</span></div></div><div class="card mini"><div class="ct">“火”“因”二字:笔速、连笔、力度<span class="cc">212</span></div></div></div></div><div class="cat"><h3 id="cz-cat-sz">数字字</h3><div class="theory"><p>数字字不能拆、不能加笔——纯靠“察人”和“密码破译”,是测字术的极限测试。</p></div><p class="cards-label">数字字案例</p><div class="cards"><div class="card mini"><div class="ct">师徒俩竟测不出一个“2”字<span class="cc">397</span></div></div><div class="card mini"><div class="ct">终于破解了密码<span class="cc">398</span></div></div></div></div><div class="cat"><h3 id="cz-cat-zr">字与人</h3><div class="theory"><blockquote><p>人们之所以测字,均寄托美好结局。不是选寓意吉祥的字,就通常在自己的名字中选一字。</p></blockquote>
+<ul><li>字有吉凶,但人的当下心境决定字的指向</li><li>心诚则字灵,心乱则字不灵</li></ul></div><p class="cards-label">综合案例</p><div class="cards"><div class="card mini"><div class="ct">正式学徒——送粉三月,始得传艺<span class="cc">3</span></div></div><div class="card mini"><div class="ct">测字先读医书——疾病判断须通医理<span class="cc">8</span></div></div><div class="card mini"><div class="ct">车上设局<span class="cc">12</span></div></div><div class="card mini"><div class="ct">“三瞎”结伴,上门踢馆<span class="cc">46</span></div></div><div class="card mini"><div class="ct">深夜,有人焦急叩门<span class="cc">119</span></div></div><div class="card mini"><div class="ct">开业那天<span class="cc">130</span></div></div><div class="card mini"><div class="ct">立即转向:算命<span class="cc">154</span></div></div><div class="card mini"><div class="ct">一个奇妙的点子冒出<span class="cc">174</span></div></div><div class="card mini"><div class="ct">上海行:古镇女老板<span class="cc">213</span></div></div><div class="card mini"><div class="ct">拒绝测字<span class="cc">346</span></div></div><div class="card mini"><div class="ct">第一步:准到他惊讶<span class="cc">374</span></div></div><div class="card mini"><div class="ct">底层人想翻身,要三代才有点起色<span class="cc">411</span></div></div><div class="card mini"><div class="ct">典型牛命<span class="cc">442</span></div></div><div class="card mini"><div class="ct">想做水果生意,刚写字就不断被打扰<span class="cc">571</span></div></div><div class="card mini"><div class="ct">从测字中找到人才与商机<span class="cc">632</span></div></div></div></div></div></section>
+<section class="topic" id="sec-mianxiang"><header class="topic-head"><div class="badge">叁</div><div><h2>面相专题</h2><p class="sub">骨相皮相 · 五官 · 案例卡片</p><p class="note">五官分类下理论与案例同框;案例标题即断语,主题一行</p></div></header><nav class="localtoc"><a href="#mx-cat-0">核心理论总纲</a><a href="#mx-cat-1">眉毛</a><a href="#mx-cat-2">眼睛</a><a href="#mx-cat-3">鼻子</a><a href="#mx-cat-4">嘴与嘴唇</a><a href="#mx-cat-5">耳朵</a><a href="#mx-cat-6">额头</a><a href="#mx-cat-7">下巴与地库</a><a href="#mx-cat-8">山根印堂颧骨</a><a href="#mx-cat-9">脸型与骨相</a><a href="#mx-cat-10">手与微表情</a><a href="#mx-cat-11">三庭五庭</a><a href="#mx-cat-12">相与命运</a><a href="#mx-cat-13">综合速查</a><a href="#mx-cat-14">口诀与总原则</a></nav><div class="topic-body"><div class="cat"><h3 id="mx-cat-0">核心理论总纲</h3><div class="theory"><h3 id="mx-a-h1">1. 骨相与皮相（书中最核心的面相美学理论）</h3>
+<h4 id="mx-a-h1">（1）骨相美 = 真美人（耐老型）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 232 章</span>《美人面相在骨不在皮》、<span class="cite">第 283 章</span>《南溪论骨相，我替人测"秀"字》、<span class="cite">第 385 章</span>《细说"马脸"美女应如何打扮》。</span></li><li><strong>理论原文</strong>：</li></ul>
+<blockquote><p>"真正的美人在于骨相。这个骨相指骨骼立体，表现在一个人的面部，就是一句话：<strong>四高三低</strong>。<br>额尖、鼻尖、上唇尖、下巴尖，四个地方要偏高，鼻额交界、人中沟、下唇下方这三个地方要低。<br>这种人，经得起岁月的摧残，属于耐看型……年轻时显得成熟，年纪稍大，越来越有韵味。"<span class="cite">第 283 章</span></p></blockquote>
+<ul><li><strong>典型代表（书中列出的）</strong>：章某怡（"容貌称不上惊艳，但骨相一流，高挑眉，薄皮相，脸上是骨皮紧致，起落有序"）、俞飞鸿（"到 50 岁，仍然会保持着姣好的容颜，宛若冻龄"）。</li><li><strong>作者评价</strong>：<span class="cite">第 232 章</span>评价谷团长："她五官精致，三庭均匀，真是美女面相，在骨不在皮。胶原蛋白充盈得多的服务员，也不如她好看。"</li></ul>
+<h4 id="mx-a-h1">（2）皮相美 = 假美人（短美型）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 136 章</span>、<span class="cite">第 283 章</span>。</span></li><li><strong>原文</strong>：</li></ul>
+<blockquote><p>"另一种则是骨相一般，个别部位长得有特点，年轻时胶原蛋白充足，皮肤饱满，显得漂亮，但老了之后，沦为常人。"<span class="cite">第 136 章</span></p></blockquote>
+<ul><li><strong>典型代表</strong>：耳东红、王某贤、某萍——"年轻时万人迷，稍老经不过岁月这把杀猪刀"。</li><li><strong>男性皮相</strong>：<span class="cite">第 283 章</span>评价水春大哥外甥："你外甥属于皮相型男，只是皮肤饱满，没有男人那种棱角分明，刚毅大气，俗称阴柔美，奶油小生一个。待到中年发福，肚子一挺，油脂分泌旺盛，头油多，头毛软塌塌，慢慢秃顶，就是油腻中年男。"</li></ul>
+<h4 id="mx-a-h1">（3）"真正看相，不是看皮肉，是看骨相"</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 374、375 章</span>（刘启明案例）、<span class="cite">第 54854 行附近</span>。</span></li><li><strong>核心原理</strong>：</li></ul>
+<blockquote><p>"一个人成年之后，不管那个照片如何变化，他的骨相定型之后是不会变的。"</p></blockquote>
+<h4 id="mx-a-h1">（4）骨骼的"十二生肖命名法"<span class="cite">第 385 章</span></h4>
+<ul><li>蛇精脸：头小，巴掌脸，下巴尖。女子长成这种脸"现在很时尚"。性格"喜怒无常，但很适合搞艺术"。缺点："虚荣心强，比较懒惰。"</li><li><strong>马骨骼</strong>（马脸）：脸长。详见第三部分。</li></ul>
+<hr>
+<h3 id="mx-a-h1">2. 人人都是面相师 / 第一印象</h3>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 286 章</span>《南溪论面相》（本书最重要的面相理论课）。</span></li><li><strong>理论</strong>：</li></ul>
+<blockquote><p>"其实，我们每一个人天天都在看相。你与不同人的打交道，就是给不同的人看相。<br>特别是与别人第一次见面，叫第一印象。第一印象就是我们对面相观察的长期积累，沉淀下来的主观意识。"</p></blockquote>
+<ul><li><strong>具体例证（同一章节）</strong>：<ul><li>看到面目凶恶的人 → "是因为你看到了他的眼睛中的凶气，决不是看到他鼻子长歪了。"</li><li>看到女人产生性冲动 → "是看到跟性器官有关的几个部位特别有吸引力。嘴唇，胸部、屁股这三个地方饱满。如果她的眼睛还会说话，这种女子，你在心中定位为风骚。"</li><li>看到女人产生"喜欢"而非"性冲动" → "是她五官比例长得十分和谐的感觉。"</li></ul></li><li><strong>结论</strong>："所以，人人都是面相师……也就是说，面相是存在的，我们无时无刻不在使用它。"</li></ul>
+<hr>
+<h3 id="mx-a-h1">3. 面相总纲："相不可独论"</h3>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 286 章</span>。</span></li><li><strong>原文</strong>：</li></ul>
+<blockquote><p>"虽然我们人人都会看相，但是，有句重要的话，<strong>相不可独论</strong>，不是人的某个器官符合上述条件之一，就可以下结论。<br>有经验的面相师，他是根据整个五官的和谐度来下结论的。"</p></blockquote>
+<ul><li><strong>重要哲学</strong>："看相不是科学，是门经验学。我和山红早就交流过，如果是门科学，1+1=2，那么人人都可以看相。"</li></ul>
+<hr>
+<h3 id="mx-a-h1">4. 看相其实是中医的"望"</h3>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 263 章</span>（约<span class="cite">第 67265 行附近</span>）。</span></li><li><strong>理论</strong>：</li></ul>
+<blockquote><p>"望一眼就知道别人五脏六腑，问题出在哪里。看相其实就是运用中医望闻问切中的'望'。"</p></blockquote>
+<hr>
+<h3 id="mx-a-h1">5. 曾国藩《相人四诀》——非专业看相者必备</h3>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 350 章</span>（约<span class="cite">第 51141 行附近</span>），<span class="cite">第 570 章</span><span class="cite">第 85023 行附近</span>。</span></li><li><strong>四句口诀</strong>：<ol><li><strong>正邪看眼鼻，真假看嘴唇</strong> —— 心术正不正看眼睛；真诚虚假看嘴巴和嘴唇（说假话时嘴会向一边歪）。</li><li><strong>功名看气概，富贵看精神</strong> —— 气场足的人前途不可限量；精神十足的人终究成就事业。</li><li><strong>主意看指爪，风波看脚筋</strong> —— 手指细长多属脑力劳动者；脚筋粗壮有劲，身体强健。</li><li><strong>若要看条理，全在语言中</strong> —— 思维是否有条理，从说话逻辑性判断。</li></ol></li><li><strong>注意事项</strong>："以上四点，基本对，不对，这是给男人看相，给女人看相不一定准。"——"因为曾国藩这四条，主要是针对自己选择手下将领。比如第二句，他认为嘴唇大方圆厚为好。女人如果长成这种嘴唇，嫁出去比较困难。"<span class="cite">第 350 章</span></li><li><strong>示例（说假话）</strong>："有些服务行业的人，特别是女性，她笑，不是发自内心的，是一种职业假笑。你注意一下，她笑起来的时候，嘴向一边歪……下次碰上有些男人，笑起来嘴唇往一边歪，基本上是在缅甸搞诈骗回来的。"<span class="cite">第 570 章</span></li></ul>
+<hr>
+<h3 id="mx-a-h1">6. 倪海厦"望诊"：鼻侧竖纹辨亲生</h3>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 262 章</span>《二猛子父亲鼻侧两道竖纹。证明他是带养的》（约<span class="cite">第 39011 行附近</span>）。</span></li><li><strong>理论</strong>：</li></ul>
+<blockquote><p>"别人笑起来，鼻梁上只有几道横的皱纹。老头鼻侧有两道垂的皱纹。就证明他的儿子是收养的。"</p></blockquote>
+<ul><li><strong>理论来源</strong>：作者自述学自"著名医生倪海夏"——"他的技术，就是望人家一眼，就知道人家母亲半年后必得大病。"</li></ul>
+<hr>
+<h3 id="mx-a-h1">7. 异相术（董先生秘传）</h3>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 431 章</span>《第一次看异相》（约<span class="cite">第 63025 行附近</span>）、<span class="cite">第 343 章</span>《挥手之间，他消失得无影无踪》<span class="cite">第 50315 行附近</span>。</span></li><li><strong>理论</strong>：</li></ul>
+<blockquote><p>"所谓'异相术'就是四柱一排，算出这个人的基本命局，再察看他五官与命局相对冲的地方。如果有对冲之处，则此人可逆天改命，前提就是命师必须给他提要求，他按你的要求去做。"<br>"这异相术，是算命与看相的结合，比起南溪家祖传的'铁板算'更高一筹。高一筹的地方就是它能指导人生。"</p></blockquote>
+<ul><li><strong>董先生笔记目录</strong><span class="cite">第 343 章</span>："分为：面相，八字，河图数论、道医经典。"</li></ul>
+<hr>
+<h3 id="mx-a-h1">8. 微表情与"手"才是真实的脸</h3>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 569 章</span>《手，才是一张真实的脸》（约<span class="cite">第 84794 行附近</span>）、<span class="cite">第 570 章</span>。</span></li><li><strong>理论</strong>：</li></ul>
+<blockquote><p>"小楚啊，看人不要看脸，脸是可以伪装，要看手。手是不会伪装的。所以，手是一张真实的脸。"</p></blockquote>
+<ul><li><strong>曾国藩补充<span class="cite">第 570 章</span></strong>：</li></ul>
+<blockquote><p>"除了听人说话，不要相信别人的脸。脸可以伪装，要注意别人手的动作。手不会伪装。"<br>"指头指头，指代表头。手上的动作多，说明大脑的思维活跃。脸上都是谎言，但手上有真相。"</p></blockquote>
+<ul><li><strong>具体手部语言</strong>：<ul><li>大拇指与食指张开成八字形搁在下巴 → 自大，居高临下听人说话。</li><li>走路手反放在后背不露出 → 安全感强，控场型（领导形象）。</li><li>双手交叉搭在一起呈"人"字放在胸前 → 心虚、对情况不熟（一般是下级汇报）。</li><li>单托腮 → 特别投入。</li><li>双托腮（双手撑下巴）→ 特别喜欢你，达到迷恋程度。</li><li>手里不断玩弄小东西 → 不想听你继续说下去。</li></ul></li><li><strong>寡妇微表情讲义（<span class="cite">第 308 章</span>，约<span class="cite">第 45511 行附近</span>，世玉学）</strong>：</li></ul>
+<blockquote><p>"压低眉毛 → 一种防卫措施；眉毛完全放下来 → 大发雷霆的前奏；斜挑眉毛 → 带有恐惧，担心，不理解，疑惑。"</p></blockquote>
+<hr></div></div><div class="cat"><h3 id="mx-cat-1">眉毛</h3><div class="theory"><h3 id="mx-b-h1">1. 眉毛（南溪论眉 + 案例）</h3>
+<h4 id="mx-b-h1">（1）眉毛的位置与浓淡</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 286 章</span>《南溪论面相》。</span></li><li><strong>原文</strong>：</li></ul>
+<blockquote><p>"五官之首，眉毛。它高居在上。<br>眉毛干什么用的呢？首先是保护眼睛，当我们大汗淋漓时，它可以挡住额头上流下来的汗水，起到一个缓冲的作用。<br><strong>眉毛的位置，生得高为好</strong>。<br>眉毛的浓密，没有特别意义，只是脾气大的人，性子急的人，眉毛又浓又密。<br>如果眉毛生得高，又淡，基本上就注定他是性格雅致。<br>如果眉毛生得低，浓黑，甚至两道眉毛中间几乎要连起来，这种形象，请大家参考黑猩猩。我就不评价了。"</p></blockquote>
+<h4 id="mx-b-h1">（2）剑眉（双道剑眉）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 6 章</span>。</span></li></ul>
+<blockquote><p>"你生得双道剑眉，胆子大，有魄力，做事有条理，今后必成为领导。"</p></blockquote>
+<h4 id="mx-b-h1">（3）女性独有的体貌特征——席汉氏综合症</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 93 章</span>《一种女性才有的体貌特征》<span class="cite">第 14076 行附近</span>。</span></li><li><strong>理论</strong>：</li></ul>
+<blockquote><p>"她神情淡漠，特别是她的双道眉毛与众不同，比正常人的眉毛短了三分之一。<br>这种症状为女性所独有，叫'席汉氏综合症'——产后大出血，造成眉毛比常人短三分之一。"</p></blockquote>
+<ul><li><strong>判断逻辑</strong>："只有眉毛缺了三分之一，才可以直接判定。如果大医院没有判定你妹妹是'席汉氏症'，只能说她的眉毛是最近才脱落。"</li><li><strong>实战效果</strong>：花朵"她确实是半年前才落眉毛，脱了眉毛不肯见人。总是要画好眉门才出门。"</li></ul>
+<h4 id="mx-b-h1">（4）眉毛杂短（搭配马脸）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 499 章</span>（约<span class="cite">第 73374 行附近</span>）。</span></li></ul>
+<blockquote><p>"这种面相属于典型的马脸，看上去线条分明，硬朗，很有男子汉气概。<br>但两腮无肉，面广鼻长，眉毛杂短。嘴阔唇薄。在相学上叫<strong>无情脸</strong>。"</p></blockquote>
+<ul><li><strong>配套理论</strong>："有求于你，什么事都掉得起价，当你没利用价值时，转眼反目，无情无义。"</li></ul>
+<h4 id="mx-b-h1">（5）眉毛短粗倒八字（越挫越勇）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 73660 行附近</span>（针对某男性的批注）。</span></li></ul>
+<blockquote><p>"因为你的眉毛又短又粗，呈现倒八字型，是个越挫越勇的人，你就是要证明给别人看，东方不亮西方亮。"</p></blockquote>
+<h4 id="mx-b-h1">（6）眉毛与藏痣</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 308 章</span>（世玉笔记，约<span class="cite">第 30656 行附近</span>）。</span></li></ul>
+<blockquote><p>"耳朵和眉毛中有痣，都叫藏痣，说明这个人非常聪明，往往在某一方面有特长。"</p></blockquote>
+<hr></div><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">6</span><div class="ct">在洗足城发挥得淋漓尽致</div><div class="cg">肖晓云（男生女相）。剑眉 + 高鼻 + 鼻翼丰满 + 嘴唇上翻 → 童年呼吸系统疾病</div></div><div class="card"><span class="cc">93</span><div class="ct">一种女性才有的体貌特征</div><div class="cg">花朵（席汉氏综合症）。眉毛短 1/3 → 席汉氏综合症 → 生过小孩 + 大出血 → 不能再孕</div></div><div class="card"><span class="cc">238</span><div class="ct">"美人尖"女人哭了</div><div class="cg">离婚女士。美人尖 → 早恋 + 与父亲感情淡漠 + 争强好胜</div></div><div class="card"><span class="cc">286</span><div class="ct">南溪论面相</div><div class="cg">五官 + 三庭系统讲义。系统讲述五官（眉/眼/鼻/嘴/耳）+ 三庭（上/中/下）</div></div><div class="card"><span class="cc">499</span><div class="ct">婚姻只有四个字，与爱情无关</div><div class="cg">婉儿。人中深直 + 马脸男友（无情脸）+ 早期失母男</div></div><div class="card"><span class="cc">15761行</span><div class="ct">一对给孩子取名的夫妻</div><div class="cg">女生男相（双眼皮、大眼、大鼻、阔嘴）</div></div><div class="card"><span class="cc">29932行</span><div class="ct">世玉（耳朵眉毛有痣）</div><div class="cg">藏痣 = 聪明有特长</div></div><div class="card"><span class="cc">64576行</span><div class="ct">某苦闷人士</div><div class="cg">印堂黑 + 眉头锁 + 川字纹 → 肝郁</div></div><div class="card"><span class="cc">71858行</span><div class="ct">老板娘领进之人</div><div class="cg">外形 + 体貌 → 身份判断</div></div><div class="card"><span class="cc">73660+73739行</span><div class="ct">某男人</div><div class="cg">眉毛又短又粗倒八字 → 越挫越勇</div></div><div class="card"><span class="cc">89566行</span><div class="ct">一苇处男 / 处女判断</div><div class="cg">眉毛贴皮 = 处女</div></div></div></div><div class="cat"><h3 id="mx-cat-2">眼睛</h3><div class="theory"><h3 id="mx-c-h1">2. 眼睛（最复杂、最重要的五官）</h3>
+<h4 id="mx-c-h1">（1）眼睛是心灵之窗</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 23 章</span>《"莫瞎"来踢馆》（约<span class="cite">第 3481 行附近</span>）。</span></li></ul>
+<blockquote><p>"相人之术，<strong>重在看眼</strong>。一个人内心所有的秘密，眼睛都会如实出卖。"</p></blockquote>
+<h4 id="mx-c-h1">（2）眼睛十二分类<span class="cite">第 79 章《一口咬定她是跳芭蕾舞的》</span></h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 11838 行附近</span>，最系统的眼睛分类。</span></li><li><strong>十二种眼睛及其性格</strong>：</li></ul>
+<div class="tscroll"><table><thead><tr><th>眼型</th><th>性格</th></tr></thead><tbody><tr><td>醉眼</td><td>酒色破财相</td></tr><tr><td>睡眼</td><td>贪贱孤苦相</td></tr><tr><td>惊眼</td><td>胆弱夭折相</td></tr><tr><td>淫眼</td><td>奸邪淫色相</td></tr><tr><td><strong>丹凤眼</strong></td><td>智慧聪明相</td></tr><tr><td>龙眼</td><td>忠心耿耿相</td></tr><tr><td>虎眼</td><td>大将之才相</td></tr><tr><td>马眼</td><td>平庸无志相</td></tr><tr><td>鹿眼</td><td>性急多情相</td></tr><tr><td>鱼眼</td><td>愚笨短命相</td></tr><tr><td>羊眼</td><td>奸诈心恶相</td></tr></tbody></table></div>
+<ul><li><strong>南溪补充<span class="cite">第 286 章</span></strong>：</li></ul>
+<blockquote><p>"眼睛……它是五官中表露心灵的窗户。<br>眼睛应该清澈明亮、温和不失威严。这是最好的眼睛。<br>又黄又赤，浮突如羊眼，细深斜视，都不善良。这个没有什么眼睛大小之分。"</p></blockquote>
+<h4 id="mx-c-h1">（3）丹凤眼带桃花（双重性格）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 79 章</span>。</span></li></ul>
+<blockquote><p>"这女子偏偏生的是丹凤眼又带桃花。这种人可塑性太大。不要看她表面上有气质，知性，文雅，其实是个双重性格的人。"</p></blockquote>
+<h4 id="mx-c-h1">（4）桃花眼（结过婚、流过产）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 437 章</span>《万老师，你方便吗？》<span class="cite">第 64052 行附近</span>。</span></li></ul>
+<blockquote><p>"原来我没注意，她朝我一笑，才发现那是一双<strong>抛钩子的桃花眼</strong>。<br>从她的面相举止，我可以肯定：她是结过婚了。即使没正式结婚，也早已享受已婚待遇，甚至流过产。"</p></blockquote>
+<h4 id="mx-c-h1">（5）眼睑（眼皮）</h4>
+<ul><li><strong>下眼皮卧蚕饱满 → 富有异性吸引力</strong>：<ul><li><span class="cite">第 86 章</span>：宋会长"下眼皮那道卧蚕，厚实饱满。有此卧蚕者，无论男女，均是富有异性吸引力。"</li><li><span class="cite">第 35953 行附近</span>："这种眼睛下眼皮卧蚕相当饱满，特别是瞟人的时候最好看。"</li></ul></li></ul>
+<h4 id="mx-c-h1">（6）睫毛（疏长纯净之女子）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 338 章</span>《睫毛长而疏，纯净之女子也》（约<span class="cite">第 49613 行附近</span>）。</span></li><li><strong>理论</strong>：</li></ul>
+<blockquote><p>"她的样子让我联想起'小家碧玉'这个成语。<br>她基本纯净，眼睛清澈，眼睫毛有特点，疏淡，而且比较长。"</p></blockquote>
+<ul><li><strong>相书原文</strong>：</li></ul>
+<blockquote><p>"相书云，<strong>焉知其人无伦序，但见睫毛疏且长</strong>。<br>凡是睫毛长长的，疏而不密，这种女子不会斤斤计较，简单而又单纯。"</p></blockquote>
+<h4 id="mx-c-h1">（7）处女看眉毛（实用经验）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 89566 行附近</span>。</span></li></ul>
+<blockquote><p>"一是处女，看眉毛。处女的眉毛百分之九十，不管修没修过，眉毛总是很柔顺地贴在皮肤上。你就是这种情况，是处女。"</p></blockquote>
+<h4 id="mx-c-h1">（8）目光与运势</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 22550 行附近</span>。</span></li></ul>
+<blockquote><p>"开的是保时捷，衣着品味不俗，梳着大反头，脸白无须，眼睛有神，<strong>印堂发亮</strong>。一看就正在走好运。"</p></blockquote>
+<ul><li><strong>走好运 vs 倒霉</strong>：</li></ul>
+<blockquote><p>"别人走好运，印堂红得发亮，你自己去照一照，你的印堂红得发紫。任何果子熟了，红透了就要掉到地上。"<span class="cite">第 71966 行附近</span></p></blockquote>
+<h4 id="mx-c-h1">（9）外八字走路 = 跳芭蕾舞 / 日本人</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 79 章</span>、<span class="cite">第 34791 行附近</span>。</span></li></ul>
+<blockquote><p>"从你进门，我就看出来了，长期练芭蕾舞的人，走路都走'外八字'——两个脚尖朝外。"<br>"我一看那三个女子，有两个走路是'外八字'。便说：要么是跳芭蕾舞的，要么是日本人。"</p></blockquote>
+<hr></div><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">23</span><div class="ct">"莫瞎"来踢馆</div><div class="cg">一位母亲。未婚女儿多次恋爱不成</div></div><div class="card"><span class="cc">79</span><div class="ct">一口咬定她是跳芭蕾舞的</div><div class="cg">明所长介绍的舞蹈老师。丹凤眼带桃花 + 额头丰满 + 外八字走路 → 舞蹈教师</div></div><div class="card"><span class="cc">86</span><div class="ct">拜访"往事不堪回首"的宋会长</div><div class="cg">宋会长。卧蚕饱满 → 异性吸引力</div></div><div class="card"><span class="cc">102</span><div class="ct">我会看走眼吗？</div><div class="cg">胎记 / 痣识别。左乳下黑痣 + 后颈黑痣</div></div><div class="card"><span class="cc">310</span><div class="ct">她的耳朵比眼睛低</div><div class="cg">老宁之妻（傻白甜）。耳低于眼 + 鼻秀气 + 白皮肤 → 傻白甜 + 颜控 + 热烈幻想型</div></div><div class="card"><span class="cc">338</span><div class="ct">睫毛长而疏，纯净之女子也</div><div class="cg">老挝翻译"碧玉"。睫毛疏长 → 纯净不计较</div></div><div class="card"><span class="cc">437</span><div class="ct">万老师，你方便吗？</div><div class="cg">"回眸一笑"。桃花眼 + 性感穿着 → 结过婚 + 流过产 + 多婚之象</div></div><div class="card"><span class="cc">570</span><div class="ct">详细教会春来察人</div><div class="cg">春来徒弟。曾国藩四诀 + 手部动作 + 微表情全套</div></div><div class="card"><span class="cc">15761行</span><div class="ct">给小孩取名的夫妻</div><div class="cg">女生男相 + 双眼皮大眼大鼻阔嘴 → 生贵子</div></div><div class="card"><span class="cc">21619行</span><div class="ct">某文人官员</div><div class="cg">方脸 + 厚嘴唇 + 崇拜眼神 → 书生</div></div><div class="card"><span class="cc">22550行</span><div class="ct">保时捷老板</div><div class="cg">印堂发亮 + 大反头 + 脸白无须 → 正在走好运</div></div><div class="card"><span class="cc">64084行</span><div class="ct">"回眸一笑"八字（多婚之象）</div><div class="cg">与桃花眼案例互证</div></div><div class="card"><span class="cc">65033行</span><div class="ct">某美妇人</div><div class="cg">脸肥嘟嘟、肤色白净、桃花眼、嘴唇性感 → 30 出头有故事</div></div><div class="card"><span class="cc">73386行</span><div class="ct">胡校长母女（婉儿案例）</div><div class="cg">人中深直 → 明星相 + 父亲传承</div></div></div></div><div class="cat"><h3 id="mx-cat-3">鼻子</h3><div class="theory"><h3 id="mx-d-h1">3. 鼻子（主管财富）</h3>
+<h4 id="mx-d-h1">（1）鼻为财帛宫</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 286 章</span>。</span></li></ul>
+<blockquote><p>"鼻子，主管财富，鼻大主财。但有些人的鼻并不大，非常秀气，如有些女演员。为什么她也拥有财富呢？这个看比例，如果脸小，下巴尖，就叫比例合适，同样主财。"</p></blockquote>
+<h4 id="mx-d-h1">（2）鼻子高挺鼻翼丰满</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 6 章</span>。</span></li></ul>
+<blockquote><p>"鼻子高挺，<strong>鼻翼丰满</strong>，财富充裕。"</p></blockquote>
+<h4 id="mx-d-h1">（3）鼻梁痣与中年运</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 286 章</span>。</span></li></ul>
+<blockquote><p>"山根到人中，代表中年，如果<strong>鼻梁上有黑痣，横纹比较多，注定中年事业受到阻力</strong>，甚至失败。这个要具体看，你们不要给人去看。"</p></blockquote>
+<h4 id="mx-d-h1">（4）鼻侧竖纹 → 儿子非亲生</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 262 章</span>（已见前述）。</span></li></ul>
+<h4 id="mx-d-h1">（5）鼻翼薄 vs 厚 = 守财能力</h4>
+<ul><li><strong>隐含于案例</strong>：<span class="cite">第 6 章</span>"鼻翼丰满，财富充裕"。</li></ul>
+<h4 id="mx-d-h1">（6）鼻子秀气 + 傻白甜</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 310 章</span>《她的耳朵比眼睛低》（约<span class="cite">第 45841 行附近</span>）。</span></li></ul>
+<blockquote><p>"有一类这样的女人，长得好，特别是<strong>鼻子很秀气</strong>，皮肤很白。但是，徒有漂亮的外表，内心很单纯。<br>内心属于热烈幻想型，也就是说，有轻微的精神分裂症。她把一切想象得很美好。内心非常固执。越是别人反对，她就越坚持。"</p></blockquote>
+<h4 id="mx-d-h1">（7）鼻子侧纹 / 异相</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 33640 行附近</span>（关于再生）。</span></li></ul>
+<blockquote><p>"再生说：'对。而且天上村的女子还有一点，鼻子特别好看。高挺，窄长。有点像欧州人'。"</p></blockquote>
+<h4 id="mx-d-h1">（8）鼻子整形（女主微调）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 32543 行附近</span>。</span></li></ul>
+<blockquote><p>"她长得不错，不过鼻子做了手术，原来没这么漂亮。"</p></blockquote>
+<hr></div><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">262</span><div class="ct">二猛子父亲鼻侧两道竖纹。证明他是带养的</div><div class="cg">老头。鼻侧竖纹 → 儿子非亲生</div></div><div class="card"><span class="cc">283</span><div class="ct">南溪论骨相，我替人测"秀"字</div><div class="cg">张老板外甥 vs 某女孩。骨相四高三低 vs 皮相胶原蛋白</div></div><div class="card"><span class="cc">32543行</span><div class="ct">某人（鼻子整形）</div><div class="cg">鼻子手术痕迹</div></div></div></div><div class="cat"><h3 id="mx-cat-4">嘴与嘴唇</h3><div class="theory"><h3 id="mx-e-h1">4. 嘴与嘴唇</h3>
+<h4 id="mx-e-h1">（1）南溪家"不看嘴，看牙"</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 286 章</span>。</span></li></ul>
+<blockquote><p>"嘴巴，我家不看，什么嘴大吃四方，纠属扯淡。我家主看牙齿。<br>一般门牙稍向外，当然不是那种匏牙，指稍向外，其嘴唇好看，<strong>上唇尖突起</strong>。长相一般不会差。<br>牙齿细密，一般为人非常伶俐。"</p></blockquote>
+<h4 id="mx-e-h1">（2）嘴大唇厚 = 旺夫</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 27027 行附近</span>（关于陶阿姨）。</span></li></ul>
+<blockquote><p>"旺夫女人五大特点，<strong>背圆厚实、脸型圆润、嘴大唇厚、下巴丰满、两颧饱满</strong>，她全占了。"</p></blockquote>
+<h4 id="mx-e-h1">（3）阔嘴 + 大鼻 = 男生女相，镇得住人</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 15761 行附近</span>。</span></li></ul>
+<blockquote><p>"我望了一眼女人，双眼皮，大眼，大鼻。阔嘴。此面相作为一个女人来说并不漂亮。但若是男相，却有大富大贵之气，看上去既慈眉善目，却又镇得住人。"</p></blockquote>
+<h4 id="mx-e-h1">（4）嘴阔唇薄 = 无情脸</h4>
+<ul><li><span class="cite">第 73374 行</span>：见前述。</li></ul>
+<h4 id="mx-e-h1">（5）樱桃小嘴 / 薄唇</h4>
+<ul><li><span class="cite">第 238 章</span>："秀鼻玲珑，樱桃小嘴。"（美人尖女子）</li></ul>
+<h4 id="mx-e-h1">（6）厚嘴唇 = 忠实可靠</h4>
+<ul><li>曾国藩诀："嘴方，圆、大、厚，忠实可靠；薄嘴唇，你小心一点。"</li></ul>
+<h4 id="mx-e-h1">（7）嘴唇一边歪 = 说假话</h4>
+<ul><li><span class="cite">第 570 章</span>：见前述"在缅甸搞诈骗"。</li></ul>
+<h4 id="mx-e-h1">（8）嘴大、嘴小、唇薄打分</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 31342 行附近</span>。</span></li></ul>
+<blockquote><p>"她笑起来，露出一口细颗的，排列整齐的牙齿，嘴小，唇薄，眼睛细长。一看，我就可以给她打九十分了。"</p></blockquote>
+<h4 id="mx-e-h1">（9）嘴唇与"丧夫三高女"</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 38576 行附近</span>（克夫面相）。</span></li></ul>
+<blockquote><p>"我本想说她是个'<strong>颧骨高，额头高、鼻子高</strong>'的三高女子，话到嘴边吞下去了。怕她去百度。因为这种面相克夫。"</p></blockquote>
+<hr></div><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">385</span><div class="ct">细说"马脸"美女应如何打扮</div><div class="cg">刘启明未来儿媳。骨骼为马（脸长）+ 打扮术（留长发）</div></div><div class="card"><span class="cc">27027行</span><div class="ct">陶阿姨（旺夫）</div><div class="cg">旺夫女人五大特点</div></div><div class="card"><span class="cc">49812行</span><div class="ct">董先生笔记</div><div class="cg">看相对象细分（旺夫 / 旺妻 / 旺子）</div></div><div class="card"><span class="cc">95118行</span><div class="ct">赵烈文（曾国藩幕僚）</div><div class="cg">赵烈文看曾国藩</div></div></div></div><div class="cat"><h3 id="mx-cat-5">耳朵</h3><div class="theory"><h3 id="mx-f-h1">5. 耳朵</h3>
+<h4 id="mx-f-h1">（1）耳朵两大特征</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 286 章</span>。</span></li></ul>
+<blockquote><p>"耳朵，不存在什么大小之分，什么耳大就有福气，扯淡。<br>耳朵两个特征：<br>一是要比脸上的肤色更白为好。<br>二是<strong>耳垂朝着嘴角为最佳</strong>。"</p></blockquote>
+<h4 id="mx-f-h1">（2）耳朵高度低于眼睛 → 傻白甜（外柔内刚）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 310 章</span>《她的耳朵比眼睛低》（约<span class="cite">第 45857 行附近</span>）。</span></li><li><strong>核心断言</strong>：</li></ul>
+<blockquote><p>"她的耳朵的高度没有超过眼睛。"<br>"长期观察的生活积累。这叫阅人无数，心中自有成竹。不信，你去访一访。"</p></blockquote>
+<ul><li><strong><span class="cite">第 569 章</span>延伸</strong>："那种傻白甜的人，就是表面上的柔和，却非常执拗。"</li></ul>
+<h4 id="mx-f-h1">（3）耳朵大 + 耳垂厚 = 福相（民间说法）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 24091 行附近</span>。</span></li></ul>
+<blockquote><p>"我娘笑呵呵地说：'贵客，贵客，真长得一副福相，你看这耳朵这么大，耳垂这么厚，发大财的人啊。'"</p></blockquote>
+<h4 id="mx-f-h1">（4）耳朵轮廓青色 + 印堂黑 = 三年苦闷隐私</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 132 章</span>《意外事件？》（约<span class="cite">第 19447 行附近</span>）。</span></li></ul>
+<blockquote><p>"不用你开口，我就知道你心中有一桩隐私，从你脸上的症状看，已有三年。不然，你<strong>印堂不至于发黑到透亮，耳朵轮廊也不至于呈青色</strong>。"</p></blockquote>
+<h4 id="mx-f-h1">（5）耳廓露出 = 干练利索</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 232 章</span>（吕导对谷团长）。</span></li></ul>
+<blockquote><p>"你的耳廓露出来更好看，更显得干练利索。"</p></blockquote>
+<h4 id="mx-f-h1">（6）耳垂痣 + 耳廓痣 = 隐藏特征（董先生识破万山红）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 343 章</span>（约<span class="cite">第 50228 行附近</span>）。</span></li></ul>
+<blockquote><p>"南阳道人说过你的特征。<strong>左耳垂上有一痣。右耳廓有一痣</strong>，有此双痣者，十万人中难有一人。"<br>"加之你测'见'字，我便判定，此为同道中人。"</p></blockquote>
+<h4 id="mx-f-h1">（7）耳后到耳朵的痣 = 隐痣</h4>
+<ul><li>见前述藏痣理论。</li></ul>
+<h4 id="mx-f-h1">（8）"耳多听字" = 心理戏法</h4>
+<ul><li><span class="cite">第 27 章</span>、<span class="cite">第 200 章</span>反复出现。</li></ul>
+<hr></div><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">132</span><div class="ct">意外事件？</div><div class="cg">再先生（想自杀者）。印堂黑透亮 + 耳轮青色 + 双下巴 → 三年苦闷 + 失性之相</div></div><div class="card"><span class="cc">232</span><div class="ct">美人面相在骨不在皮</div><div class="cg">谷团长。骨相美的极致体现</div></div><div class="card"><span class="cc">24091行</span><div class="ct">我娘说某客人</div><div class="cg">耳大耳垂厚 = 福相</div></div></div></div><div class="cat"><h3 id="mx-cat-6">额头</h3><div class="theory"><h3 id="mx-g-h1">6. 额头</h3>
+<h4 id="mx-g-h1">（1）额头丰满 = 优渥家境（舞蹈老师案例）</h4>
+<ul class="caselist"><li class="src-li"><span class="cite">出处:<span class="cite">第 79 章</span><span class="cite">第 11982 行附近</span>。</span></li></ul>
+<blockquote><p>"特点：丹凤眼带桃花……<strong>额头丰满</strong>，（代表小时候家境优渥）。"</p></blockquote>
+<h4 id="mx-g-h1">（2）额头双宫</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 37716 行附近</span>。</span></li></ul>
+<blockquote><p>"我指着自己的额头告诉她，<strong>额头有两个宫，一个叫日宫，代表父亲，一个叫月宫，代表母亲</strong>。<br>你现在额头上的日宫，月宫都陷下去了，你自己去照镜子……"</p></blockquote>
+<h4 id="mx-g-h1">（3）额头光洁宽大 = 早年顺畅</h4>
+<ul><li><span class="cite">第 286 章</span>："上庭指额头，代表早年运程，以光洁宽大为佳。如果坑坑洼洼，额头过窄，表示早年不顺畅。"</li></ul>
+<h4 id="mx-g-h1">（4）刘海与造型</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 232 章</span>。</span></li></ul>
+<blockquote><p>"前额的刘海还要短一点。农村妇女要干活，要出汗，刘海留长了，容易粘额头。"</p></blockquote>
+<h4 id="mx-g-h1">（5）额头代表火星，忌讳坑洼</h4>
+<ul><li>多处隐含：<span class="cite">第 286 章</span>已点明。</li></ul>
+<hr></div></div><div class="cat"><h3 id="mx-cat-7">下巴与地库</h3><div class="theory"><h3 id="mx-h-h1">7. 下巴 / 地库</h3>
+<h4 id="mx-h-h1">（1）地库圆润饱满为佳</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 286 章</span>。</span></li></ul>
+<blockquote><p>"下巴这一块，总称<strong>地库</strong>，饱满圆润为最佳。"<br>"下巴这一块叫地库，代表晚年，园润饱满为佳。这个是变化的，有些女人年轻时下巴尖，中年以后变得圆润。"</p></blockquote>
+<h4 id="mx-h-h1">（2）下庭长 = 大器晚成</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 251 章</span>《下庭长，大器晚成》<span class="cite">第 37446 行附近</span>。</span></li></ul>
+<blockquote><p>"你下庭长，下巴圆润，属大器晚成，后福之人。"</p></blockquote>
+<h4 id="mx-h-h1">（3）下巴尖而长（女子）= 早年发迹</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 39940 行附近</span>。</span></li></ul>
+<blockquote><p>"你的下巴尖而长，如果是个女子，属于早年发迹之相。是个男子，非得中年以后，下巴变得圆润才会星光灿烂。"</p></blockquote>
+<h4 id="mx-h-h1">（4）下巴尖 / 蛇精脸（流行时尚）</h4>
+<ul><li><span class="cite">第 385 章</span>：蛇精脸"头小，巴掌脸，下巴尖。现在很时尚。"</li></ul>
+<h4 id="mx-h-h1">（5）双下巴 = 失性之状（无欲无求失败）</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 132 章</span>《意外事件？》<span class="cite">第 19598 行附近</span>。</span></li></ul>
+<blockquote><p>"相由心生，你的脸部症状为：<strong>失性之状</strong>。<br>下巴阔大，已成双下巴，你是方脸，现在已成菩萨下巴。你在努力想成为一个无欲无求的人，但是，做不到。<br>所以，你的眼睛不笑，不慈爱，是忧虑的，形成了一副像菩萨却愁苦着的脸的样子。<strong>此为失性之相</strong>。不信，你去照照镜子。"</p></blockquote>
+<h4 id="mx-h-h1">（6）马骨骼老下巴丰润 → 慈祥</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 385 章</span>。</span></li></ul>
+<blockquote><p>"老了，她很好看。马骨骼的人老了下巴丰润，就会变得非常慈祥。"</p></blockquote>
+<hr></div><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">251</span><div class="ct">下庭长，大器晚成</div><div class="cg">一位女士。下庭长 + 下巴圆润 → 大器晚成、后福</div></div><div class="card"><span class="cc">5038行</span><div class="ct">西坡先生</div><div class="cg">圆脸平头 = 名医风范</div></div></div></div><div class="cat"><h3 id="mx-cat-8">山根印堂颧骨</h3><div class="theory"><h3 id="mx-i-h1">8. 人中 / 山根 / 印堂 / 法令纹 / 颧骨 / 卧蚕</h3>
+<h4 id="mx-i-h1">（1）人中又深又直</h4>
+<ul><li class="src-li"><span class="cite">出处:<span class="cite">第 499 章</span><span class="cite">第 73386 行附近</span>。</span></li></ul>
+<blockquote><p>"借机扫了一眼婉儿。大眼、高鼻，<strong>人中特别深</strong>。<br>'人中，又深又直。'<br>'人中又深又直，是有福气，是吗？'<br>'与五官搭配得好，比例合适就特别好看。比如女明星，<strong>刘诗诗、杨颖、热巴</strong>都是这样的人中。'"</p></blockquote>
+<h4 id="mx-i-h1">（2）印堂发黑</h4>
+<ul><li class="src-li"><span class="cite">出处:第 132、71860、71966 等多处。</span></li></ul>
+<blockquote><p>"他身体消瘦，<strong>印堂发黑</strong>，脸色青绿，嘴巴干涩。"<span class="cite">第 52746 行附近</span>，克鲁兹）<br>"你印堂发黑，眉头常锁，有明显的<strong>川字纹</strong>。不说是一个看相的，就是中医生也一眼就可以看出你心里苦闷，气郁于肝，心志不畅。"（<span class="cite">第 64576 行附近</span></p></blockquote>
+<h4 id="mx-i-h1">（3）印堂红得发亮 / 紫</h4>
+<ul><li><span class="cite">第 22550 行附近</span>：印堂发亮 → 走好运。</li><li><span class="cite">第 71860 行附近</span>：印堂红得发紫 → 果子熟透要掉地。</li></ul>
+<h4 id="mx-i-h1">（4）山根横纹 = 中年不利</h4>
+<ul><li>见前<span class="cite">第 286 章</span>。</li></ul>
+<h4 id="mx-i-h1">（5）颧骨高 + 额头高 + 鼻子高 = 克夫三高</h4>
+<ul><li>见前<span class="cite">第 38576 行</span>。</li></ul>
+<h4 id="mx-i-h1">（6）卧蚕饱满 = 异性吸引力</h4>
+<ul><li>见前述多处。</li></ul>
+<hr></div></div><div class="cat"><h3 id="mx-cat-9">脸型与骨相</h3><div class="theory"><h2 id="mx-j-h1">三、脸型与异相</h2>
+<h3 id="mx-j-h2">1. 脸型分类（按骨骼生肖命名）</h3>
+<h4 id="mx-j-h2">（1）蛇精脸（巴掌脸 + 下巴尖）</h4>
+<ul><li><span class="cite">第 385 章</span>：女子流行脸型。性格喜怒无常，适合搞艺术。缺点：虚荣心强、懒惰。</li></ul>
+<h4 id="mx-j-h2">（2）马脸（脸长）</h4>
+<ul><li>第 385、499、94909 等章。</li><li><strong><span class="cite">第 385 章</span>"马脸女子打扮术"</strong>：</li></ul>
+<blockquote><p>"骨骼为马自然就脸长……脸长的女子以留长发为好。"<br>"头发垂下来，对下巴两侧有个修饰作用。好像下巴变短了。"<br>"你看那些主持人，举《海峡两岸》主持人李红的发型……就是两侧的头发往下垂，比较长。"<br>"在视觉上还有一条原理，一条长线，旁边画一条更长的线。原来的那条长线就好像变短了。"</p></blockquote>
+<ul><li><strong>典型明星</strong>：陈慧珊、张钧甯、佘诗曼、曾黎——"都是留长发，都好看"。</li><li><strong>老化趋势</strong>："马骨骼的人老了下巴丰润，就会变得非常慈祥。"</li><li><strong>配<span class="cite">第 499 章</span>"无情脸"</strong>："两腮无肉，面广鼻长，眉毛杂短。嘴阔唇薄。在相学上叫无情脸。"</li></ul>
+<h4 id="mx-j-h2">（3）方脸</h4>
+<ul><li><span class="cite">第 21619 行附近</span>："留着寸头，方脸，厚嘴唇……眼睛里放出一种非常崇拜的光芒。"（典型文人官员）</li><li><span class="cite">第 43999 行附近</span>："来人方头大脸，寸发、鼓眼、大鼻、厚嘴唇，年纪四十多岁。"（相士识别）</li></ul>
+<h4 id="mx-j-h2">（4）圆脸</h4>
+<ul><li><span class="cite">第 5038 行附近</span>："平头圆脸，短发无须。"（西坡先生）</li></ul>
+<h4 id="mx-j-h2">（5）瓜子脸 + 圆下巴</h4>
+<ul><li><span class="cite">第 338 章</span>碧玉："大眼，直鼻，圆下巴。"→ 小家碧玉型。</li></ul>
+<hr>
+<h3 id="mx-j-h2">2. 美人尖（额头正中发尖）</h3>
+<h4 id="mx-j-h2">出处</h4>
+<p><strong><span class="cite">第 238 章</span>《"美人尖"女人哭了》<span class="cite">第 35376 行附近</span></strong>——专门章节。</p>
+<h4 id="mx-j-h2">理论</h4>
+<blockquote><p>"年纪三十来岁，<strong>蛾眉淡扫，两目乏神。秀鼻玲珑，樱桃小嘴</strong>。最显著的特点是额头上有一个'美人尖'。<br>所谓'美人尖'，就是指人的额头正中间的头发会往下生长一点。<br>女人的头发长成这种，一般脸型比较漂亮。但<strong>容易早恋，比较喜欢年长的男性</strong>。<br><strong>大多数与父亲的感情淡漠</strong>。"</p></blockquote>
+<h4 id="mx-j-h2">性格配套</h4>
+<blockquote><p>"<strong>大凡长美人尖的女子，喜欢争强好胜</strong>。我抓住她这个特点，继续说下去……"</p></blockquote>
+<hr>
+<h3 id="mx-j-h2">3. 鼻侧竖纹（亲生 vs 抱养）</h3>
+<h4 id="mx-j-h2">出处</h4>
+<p><strong><span class="cite">第 262 章</span>《二猛子父亲鼻侧两道竖纹。证明他是带养的》<span class="cite">第 38936 行附近</span></strong>——专门章节。</p>
+<h4 id="mx-j-h2">理论</h4>
+<blockquote><p>"别人笑起来，鼻梁上只有几道横的皱纹。老头鼻侧有两道垂的皱纹。就证明他的儿子是收养的。"</p></blockquote>
+<h4 id="mx-j-h2">来源</h4>
+<blockquote><p>"著名医生倪海夏说的。他的技术，就是望人家一眼，就知道人家母亲半年后必得大病。"</p></blockquote>
+<hr>
+<h3 id="mx-j-h2">4. 耳朵位置（耳低于眼 = 傻白甜）</h3>
+<h4 id="mx-j-h2">出处</h4>
+<p><strong><span class="cite">第 310 章</span>《她的耳朵比眼睛低》<span class="cite">第 45750 行附近</span></strong>——专门章节。</p>
+<h4 id="mx-j-h2">理论</h4>
+<blockquote><p>"她耳朵的高度没有超过眼睛。"</p></blockquote>
+<h4 id="mx-j-h2">性格刻画</h4>
+<blockquote><p>"有一类这样的女人，长得好，特别是鼻子很秀气，皮肤很白。但是，徒有漂亮的外表，内心很单纯。<br>内心属于热烈幻想型，也就是说，有轻微的精神分裂症。<br>她把一切想象得很美好。内心非常固执。越是别人反对，她就越坚持。<br>她是标准的<strong>颜控</strong>。"</p></blockquote>
+<h4 id="mx-j-h2">与颜控 / 老宁的契合</h4>
+<blockquote><p>"老宁这种人，会画饼。极端自私的人在追求女人时，特别会画饼。<br>而他的妻子一是漂亮，二是很单纯，三是理想主义，把什么都想象得很甜。四是颜控。<br>所以老宁对这种女人，很容易上手。"</p></blockquote>
+<hr>
+<h3 id="mx-j-h2">5. 睫毛疏长 = 纯净之女子</h3>
+<h4 id="mx-j-h2">出处</h4>
+<p><strong><span class="cite">第 338 章</span>《睫毛长而疏，纯净之女子也》<span class="cite">第 49498 行附近</span></strong>——专门章节。</p>
+<h4 id="mx-j-h2">理论</h4>
+<blockquote><p>"她基本纯净，眼睛清澈，眼睫毛有特点，疏淡，而且比较长。"</p></blockquote>
+<h4 id="mx-j-h2">相书引用</h4>
+<blockquote><p>"相书云，<strong>焉知其人无伦序，但见睫毛疏且长</strong>。<br>凡是睫毛长长的，疏而不密，这种女子不会斤斤计较，简单而又单纯。"</p></blockquote>
+<hr>
+<h3 id="mx-j-h2">6. 三高女子（克夫三高）</h3>
+<h4 id="mx-j-h2">出处</h4>
+<p><span class="cite">第 38576 行附近</span>。</p>
+<h4 id="mx-j-h2">理论</h4>
+<blockquote><p>"颧骨高、额头高、鼻子高"的三高女子 → "这种面相克夫"。<br>替代说法："因为你有魄力。性子还有点急。"</p></blockquote>
+<hr>
+<h3 id="mx-j-h2">7. 失性之相（菩萨下巴）</h3>
+<h4 id="mx-j-h2">出处</h4>
+<p><span class="cite">第 19598 行附近</span>。</p>
+<h4 id="mx-j-h2">特征</h4>
+<ul><li>双下巴、方脸</li><li>像菩萨却愁苦</li><li>眼睛不笑、不慈爱</li><li>在努力无欲无求但做不到</li></ul>
+<hr>
+<h3 id="mx-j-h2">8. 印记传承：基因与面相</h3>
+<h4 id="mx-j-h2">出处</h4>
+<p><span class="cite">第 54768 行附近</span>。</p>
+<h4 id="mx-j-h2">理论</h4>
+<blockquote><p>"自从读了董先生的笔记后，我的相人之术更准。刘启明的面相非常典型，有代表性。<br>人类总是周而复始，你身上的记印，就是你祖先的记印。我从你的面相上看，你的家庭基因，男性相当强悍。"</p></blockquote>
+<ul><li>"按一般的遗传学，在相貌上，崽像娘，但是你家族不仅崽像爹，连女儿也像爹。"</li><li>"男性基因强悍……代代会出一个不成器的人。"</li></ul>
+<hr>
+<h3 id="mx-j-h2">9. 川字纹 + 印堂黑 = 抑郁（医理相通）</h3>
+<h4 id="mx-j-h2">出处</h4>
+<p><span class="cite">第 64576 行附近</span>。</p>
+<blockquote><p>"苦闷的人，一眼就能看出来。你印堂发黑，眉头常锁，有明显的川字纹。不说是一个看相的，就是中医生也一眼就可以看出你心里苦闷，气郁于肝，心志不畅。"</p></blockquote>
+<hr></div><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">136</span><div class="ct">测字先察人</div><div class="cg">年轻女孩。骨相美 vs 皮相美</div></div></div></div><div class="cat"><h3 id="mx-cat-10">手与微表情</h3><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">569</span><div class="ct">手，才是一张真实的脸</div><div class="cg">楚倩 / 罗总。手部动作暴露内心</div></div><div class="card"><span class="cc">20998行</span><div class="ct">某富贵相</div><div class="cg">"手心有十字纹"（百岁纹）"胸有大字"（隐痣）</div></div></div></div><div class="cat"><h3 id="mx-cat-11">三庭五庭</h3><div class="theory"><h2 id="mx-k-h1">四、三庭五庭</h2>
+<h3 id="mx-k-h2">1. 三庭</h3>
+<p><strong>出处</strong>：<span class="cite">第 286 章</span>《南溪论面相》。</p>
+<ul><li><strong>上庭（额头）</strong>——代表早年运程。"以光洁宽大为佳。如果坑坑洼洼，额头过窄，表示早年不顺畅。"</li><li><strong>中庭（山根到人中）</strong>——代表中年。"如果鼻梁上有黑痣，横纹比较多，注定中年事业受到阻力，甚至失败。"</li><li><strong>下庭（下巴/地库）</strong>——代表晚年。"园润饱满为佳。这个是变化的，有些女人年轻时下巴尖，中年以后变得圆润。"</li></ul>
+<h3 id="mx-k-h2">2. 五庭</h3>
+<p><strong>出处</strong>：<span class="cite">第 80482 行附近</span>（关于曹秘书）。</p>
+<blockquote><p>"从他的面相看，这些年应该升职了。<strong>五庭中，他的中庭长得最好。在三十至四十岁这个时间段，他有发达的机会。</strong>"</p></blockquote>
+<blockquote><p>"三条，一般人看不出，像我这种长期观察别人面相的人，一望就知。一个人能走多远，全赖这三点的修为深浅。"<span class="cite">第 77241 行附近</span></p></blockquote>
+<hr></div></div><div class="cat"><h3 id="mx-cat-12">相与命运</h3><div class="theory"><h2 id="mx-l-h1">五、面相与疾病、婚姻、生育、命运的关联</h2>
+<h3 id="mx-l-h2">1. 面相与疾病</h3>
+<h4 id="mx-l-h2">（1）印堂黑 + 耳轮青 = 苦闷三年 / 肝郁</h4>
+<ul><li><span class="cite">第 19447 行附近</span>。</li></ul>
+<h4 id="mx-l-h2">（2）眉毛短三分之一 = 席汉氏综合症（产后大出血）</h4>
+<ul><li><span class="cite">第 14076 行附近</span>（花朵妹妹案例）。</li></ul>
+<h4 id="mx-l-h2">（3）眼睛发黄 = 肝胆病</h4>
+<ul><li><span class="cite">第 4808 行附近</span>。</li></ul>
+<blockquote><p>"肝胆病特点是脸色，眼睛发黄。故断为肝胆性疾病。又，肝胆五行为木，而如今乃酉金月，金旺则木死。"</p></blockquote>
+<h4 id="mx-l-h2">（4）鼻梁高挺 + 上唇外翻 = 童年呼吸系统疾病</h4>
+<ul><li><span class="cite">第 6 章</span>肖晓云案例："上嘴唇略略上翻，小时候有呼吸系统疾病……因为呼吸不畅，白天没事，晚上睡觉时，不得不用嘴来帮助呼吸。长此以往，骨骼的生长向外突，形成了你这种上唇向外翻的嘴唇特征。"</li></ul>
+<h4 id="mx-l-h2">（5）克鲁兹"印堂黑、脸青绿、嘴干涩、手枯"</h4>
+<ul><li><span class="cite">第 52746 行附近</span>。</li></ul>
+<h3 id="mx-l-h2">2. 面相与生育</h3>
+<h4 id="mx-l-h2">（1）女生男相 = 生贵子</h4>
+<ul><li><span class="cite">第 15761 行附近</span>。</li></ul>
+<blockquote><p>"你老婆就是女生男相，是个生贵子的好相貌。"</p></blockquote>
+<h4 id="mx-l-h2">（2）怀男 vs 怀女体貌</h4>
+<ul><li><span class="cite">第 45940 行附近</span>。</li></ul>
+<blockquote><p>"肚子的形状比较尖 → 怀男孩的机率比较大；<br>肚脐眼凸出；<br>妊娠线又细又长又直；<br>怀孕后期，孕妇大腿根、腋下、乳晕发黑。<strong>鼻头变大</strong>。"</p></blockquote>
+<h3 id="mx-l-h2">3. 面相与婚姻</h3>
+<h4 id="mx-l-h2">（1）三高女子克夫</h4>
+<ul><li><span class="cite">第 38576 行附近</span>。</li></ul>
+<h4 id="mx-l-h2">（2）嘴唇大方圆厚 = 嫁出去比较困难</h4>
+<ul><li><span class="cite">第 51181 行附近</span>（曾国藩理论应用于女性）。</li></ul>
+<h4 id="mx-l-h2">（3）旺夫五大特征</h4>
+<ul><li><span class="cite">第 27027 行附近</span>。</li></ul>
+<blockquote><p>"背圆厚实、脸型圆润、嘴大唇厚、下巴丰满、两颧饱满"</p></blockquote>
+<h4 id="mx-l-h2">（4）刘启明未来儿媳 = 旺夫相</h4>
+<ul><li><span class="cite">第 56330 行附近</span>。</li></ul>
+<blockquote><p>"坚毅、大气，开朗，是旺夫之相。"</p></blockquote>
+<h4 id="mx-l-h2">（5）无情脸 + 早期丧父男 = 不适合温柔妻</h4>
+<ul><li><span class="cite">第 499 章</span>婉儿男友案例。</li></ul>
+<h3 id="mx-l-h2">4. 面相与命运 / 财富</h3>
+<h4 id="mx-l-h2">（1）面相 = 基因 + 祖传</h4>
+<ul><li><span class="cite">第 54770 行附近</span>。</li></ul>
+<h4 id="mx-l-h2">（2）凶险者长寿者对照</h4>
+<ul><li><span class="cite">第 70433 行附近</span>（关于莫瞎"放话必死"的人）。</li></ul>
+<h4 id="mx-l-h2">（3）富贵之相</h4>
+<ul><li><span class="cite">第 6268 行附近</span>（井柏森）："此人属于富贵之相，但须得遇上贵人提携。"</li></ul>
+<h4 id="mx-l-h2">（4）三高 = 魄力 vs 克夫</h4>
+<ul><li>同一特征两解。</li></ul>
+<hr></div></div><div class="cat"><h3 id="mx-cat-13">综合速查</h3><p class="cards-label">面相案例卡片</p><div class="cards"><div class="card"><span class="cc">5</span><div class="ct">测字先察人</div><div class="cg">红衣女子。从衣着判断婚否 + 临时起意</div></div><div class="card"><span class="cc">36</span><div class="ct">业务不熟，险象横生 / 竟然能算出她做哪一行？</div><div class="cg">静静 / 美发店老板。动作观察推断职业</div></div><div class="card"><span class="cc">209</span><div class="ct">我说："你身孕一个月了。"</div><div class="cg">章晓萱。面相 + 痣识别 → 推算人生节点</div></div><div class="card"><span class="cc">283</span><div class="ct">猴哥 / 向萍 / 静女</div><div class="cg">面相对命运的影响（对三人的观察）</div></div><div class="card"><span class="cc">374</span><div class="ct">准到他惊讶</div><div class="cg">刘启明（福建华侨）。基因传承 + 家族分析</div></div><div class="card"><span class="cc">6268行</span><div class="ct">井柏森</div><div class="cg">富贵之相 + 贵人提携</div></div><div class="card"><span class="cc">63345+65035行</span><div class="ct">董先生面部观察结论</div><div class="cg">面相不和八字分离</div></div><div class="card"><span class="cc">71860+71966行</span><div class="ct">郭大记者</div><div class="cg">印堂红得发紫 = 走好运到顶，要倒霉</div></div></div></div><div class="cat"><h3 id="mx-cat-14">口诀与总原则</h3><div class="theory"><h2 id="mx-m-h1">七、面相核心口诀（本书最终汇总）</h2>
+<p>按重要性排序：</p>
+<ol><li><strong>相不可独论</strong> —— 五官和谐度比单器官更重要<span class="cite">第 286 章</span></li><li><strong>骨相 vs 皮相</strong> —— 美人四高三低 vs 皮相短美<span class="cite">第 232、283 章</span></li><li><strong>第一眼法则</strong> —— 人人都是面相师<span class="cite">第 286 章</span></li><li><strong>曾国藩四诀</strong> —— 正邪眼鼻 / 真假嘴唇 / 功名气概 / 富贵精神 / 主意指爪 / 风波脚筋 / 条理语言<span class="cite">第 350、570 章</span></li><li><strong>倪海厦望诊</strong> —— 鼻侧竖纹辨亲生；印堂耳轮辨抑郁<span class="cite">第 132、262 章</span></li><li><strong>耳垂嘴角 / 鼻翼丰满</strong> → 财富<span class="cite">第 286、6 章</span></li><li><strong>三高女克夫 / 旺夫五大特点</strong> → 婚姻（第 38576、27027 行附近）</li><li><strong>美人尖早恋争强 / 睫毛疏长纯净</strong> → 性格<span class="cite">第 238、338 章</span></li><li><strong>耳低于眼傻白甜</strong> → 性格<span class="cite">第 310 章</span></li><li><strong>手比脸真</strong> —— 微表情胜过静态面容<span class="cite">第 569、570 章</span></li></ol>
+<hr>
+<h2 id="mx-m-h2">八、面相与测字的结合运用</h2>
+<p>本书中万山红多次强调：</p>
+<blockquote><p>"测字之术，首在察人。"<span class="cite">第 5 章道长语</span><br>"看相其实是运用中医望闻问切中的'望'。"<br>"测字也好，看相也好，跟医生是一回事。经验积累得越多，就越得心应手。"<span class="cite">第 43473 行附近</span><br>"万山红的工作室包罗万象：测字、看相、算命、心理咨询、针灸、指压。"<span class="cite">第 61799 行附近</span></p></blockquote>
+<p><strong>应用顺序</strong>：先察人（望 + 闻）→ 再问切（实际交谈）→ 最后才是测字（理）。所以面相始终是本书所有技能的"前置技能"。</p>
+<hr>
+<h2 id="mx-m-h3">九、补充：相面与其他术数的对比</h2>
+<div class="tscroll"><table><thead><tr><th>项目</th><th>相面</th><th>测字</th><th>八字</th><th>异相术</th></tr></thead><tbody><tr><td>速度</td><td>一望即知（最快）</td><td>当场即测</td><td>需生辰</td><td>需八字 + 五官对冲</td></tr><tr><td>准确度</td><td>经验学</td><td>取决于字的选择</td><td>理论较成熟</td><td>最高级（指导人生）</td></tr><tr><td>限制</td><td>五官和谐度优先</td><td>选字随机性</td><td>需准确时辰</td><td>找到对冲点即可逆天改命</td></tr><tr><td>心理压力</td><td>中（需开口）</td><td>低（被测者写）</td><td>中</td><td>高（需劝人改命）</td></tr></tbody></table></div>
+<hr>
+<h2 id="mx-m-h4">十、本书面相应用总原则（一句话总结）</h2>
+<blockquote><p><strong>"相不可独论，骨相决定长线，皮相决定短线，五官搭配看和谐，手动比脸真。"</strong></p><p>—— 万山红 / 南溪 / 董先生 综合教义（《测字有术》<span class="cite">第 5、232、283、286、310、338、569 章</span>萃取）</p></blockquote>
+<hr></div></div></div></section>
+<section class="topic" id="sec-charen"><header class="topic-head"><div class="badge">肆</div><div><h2>察人与商业专题</h2><p class="sub">察人识人 · 处世 · 商业</p><p class="note">理论 + 微表情速查在上,案例按实战 / 处世 / 商业分栏</p></div></header><nav class="localtoc"><a href="#cr-cat-th">察人核心理论</a><a href="#cr-cat-micro">微表情速查</a><a href="#cr-cat-察人实战">察人实战</a><a href="#cr-cat-处世心法">处世心法</a><a href="#cr-cat-商业营销">商业营销</a></nav><div class="topic-body"><div class="cat"><h3 id="cr-cat-th">察人核心理论</h3><div class="theory"><ul><li><strong>曾国藩察人四诀</strong>:邪正看眼鼻,真假看嘴唇;功名看气概,富贵看精神</li><li><strong>望闻问切之“望”</strong>:望外表(衣着步态表情)、闻声(话语脚步笑)、问(设问套话)、切(实践验证)</li><li><strong>手是真实的脸</strong>:脸可伪装,手不会伪装——看人不要看脸,要看手</li><li><strong>三岁看小,七岁看老</strong>:童年照片可推骨相定型</li></ul></div></div><div class="cat"><h3 id="cr-cat-micro">微表情速查</h3><div class="theory"><p>出自原书<span class="cite">第 308 章</span>“教世玉微表情”——信号在前,含义在后。</p></div><p class="cards-label">信号卡片</p><div class="cards"><div class="card"><span class="cc">眉毛</span><div class="ct">压低眉毛</div><div class="cg">防卫措施</div></div><div class="card"><span class="cc">眉毛</span><div class="ct">眉毛完全放下</div><div class="cg">大发雷霆的前奏</div></div><div class="card"><span class="cc">眉毛</span><div class="ct">斜挑眉毛</div><div class="cg">恐惧、担心、不理解、疑惑</div></div><div class="card"><span class="cc">眉毛</span><div class="ct">眉毛不动,眼角轻蔑</div><div class="cg">胸有成竹、不屑回应</div></div><div class="card"><span class="cc">笑容</span><div class="ct">哈哈大笑</div><div class="cg">从心底发出,真诚</div></div><div class="card"><span class="cc">笑容</span><div class="ct">嘿嘿</div><div class="cg">假笑,内心不认同</div></div><div class="card"><span class="cc">笑容</span><div class="ct">嘻嘻</div><div class="cg">窃喜、幸灾乐祸</div></div><div class="card"><span class="cc">笑容</span><div class="ct">嚯嚯</div><div class="cg">惊奇、糊弄、嘲弄</div></div><div class="card"><span class="cc">笑容</span><div class="ct">抿嘴笑</div><div class="cg">强烈戒备(牙齿不好看者除外)</div></div><div class="card"><span class="cc">笑容</span><div class="ct">半脸笑半脸僵,嘴角下撇</div><div class="cg">尴尬、难以抉择、害怕</div></div><div class="card"><span class="cc">笑容</span><div class="ct">嘴角微翘,收回去很快</div><div class="cg">职业假笑</div></div><div class="card"><span class="cc">笑容</span><div class="ct">侧脸用眼角微笑</div><div class="cg">女人常用——喜欢或勾引</div></div><div class="card"><span class="cc">肢体</span><div class="ct">拇食指张开托下巴</div><div class="cg">傲慢听人</div></div><div class="card"><span class="cc">肢体</span><div class="ct">摸脸、擦鼻子</div><div class="cg">紧张(特工不会)</div></div><div class="card"><span class="cc">肢体</span><div class="ct">手指时分时合,踢被子</div><div class="cg">神志不清</div></div></div></div><div class="cat"><h3 id="cr-cat-察人实战">察人实战</h3><div class="theory"><p>一眼断人、设局试人、识别掮客与“人精”。</p></div><p class="cards-label">案例卡片</p><div class="cards"><div class="card mini"><div class="ct">测字先察人<span class="cc">5</span></div></div><div class="card mini"><div class="ct">旁敲侧击<span class="cc">9</span></div></div><div class="card mini"><div class="ct">细谈解字<span class="cc">11</span></div></div><div class="card mini"><div class="ct">车上设局<span class="cc">12</span></div></div><div class="card mini"><div class="ct">两边通吃<span class="cc">14</span></div></div><div class="card mini"><div class="ct">价值连城<span class="cc">17</span></div></div><div class="card mini"><div class="ct">声东击西<span class="cc">18</span></div></div><div class="card mini"><div class="ct">我学会“养人”<span class="cc">43</span></div></div><div class="card mini"><div class="ct">师父教我辨“掮客”<span class="cc">61</span></div></div><div class="card mini"><div class="ct">二少爷:最不像骗子的骗子<span class="cc">68</span></div></div><div class="card mini"><div class="ct">原来肖立明是个“人精”<span class="cc">92</span></div></div><div class="card mini"><div class="ct">论“察人”,师父是高手<span class="cc">103</span></div></div><div class="card mini"><div class="ct">搬家宴,小林真的来了<span class="cc">153</span></div></div><div class="card mini"><div class="ct">上海行:古镇女老板<span class="cc">213</span></div></div><div class="card mini"><div class="ct">上海行:遇上高人<span class="cc">214</span></div></div><div class="card mini"><div class="ct">上海行:见到久别的师父<span class="cc">217</span></div></div><div class="card mini"><div class="ct">给余水春说方位<span class="cc">249</span></div></div><div class="card mini"><div class="ct">教世玉“微表情”<span class="cc">308</span></div></div><div class="card mini"><div class="ct">睫毛长而疏,纯净之女子<span class="cc">338</span></div></div><div class="card mini"><div class="ct">她要测字,我叫她别说出口<span class="cc">496</span></div></div><div class="card mini"><div class="ct">综艺节目:观众也是演员<span class="cc">509</span></div></div></div></div><div class="cat"><h3 id="cr-cat-处世心法">处世心法</h3><div class="theory"><p>说话、谈判、人情分寸。</p></div><p class="cards-label">案例卡片</p><div class="cards"><div class="card mini"><div class="ct">把球踢回去<span class="cc">44</span></div></div><div class="card mini"><div class="ct">功夫在诗外<span class="cc">57</span></div></div><div class="card mini"><div class="ct">我出的主意,她无法接受<span class="cc">78</span></div></div><div class="card mini"><div class="ct">科技越发展,人越不停换职业<span class="cc">475</span></div></div><div class="card mini"><div class="ct">说话是一门艺术<span class="cc">508</span></div></div><div class="card mini"><div class="ct">与魔鬼打交道,只能用魔鬼的方法<span class="cc">518</span></div></div><div class="card mini"><div class="ct">欲擒故纵<span class="cc">520</span></div></div><div class="card mini"><div class="ct">孩子早恋,一定要冷处理<span class="cc">531</span></div></div><div class="card mini"><div class="ct">桌子一定要摆在正中<span class="cc">540</span></div></div><div class="card mini"><div class="ct">不要轻易让人看到你的伤疤<span class="cc">605</span></div></div><div class="card mini"><div class="ct">为什么不要给邻居算命?<span class="cc">627</span></div></div><div class="card mini"><div class="ct">许多时候不说话,保持微笑就行<span class="cc">637</span></div></div><div class="card mini"><div class="ct">气氛比讲话更重要<span class="cc">638</span></div></div><div class="card mini"><div class="ct">关门教妻:嘴甜是让自己少受罪<span class="cc">640</span></div></div></div></div><div class="cat"><h3 id="cr-cat-商业营销">商业营销</h3><div class="theory"><p>IP、造势、砍价、开业。</p></div><p class="cards-label">案例卡片</p><div class="cards"><div class="card mini"><div class="ct">会造势的人<span class="cc">25</span></div></div><div class="card mini"><div class="ct">业务不熟,险象横生<span class="cc">36</span></div></div><div class="card mini"><div class="ct">给美女选店铺<span class="cc">66</span></div></div><div class="card mini"><div class="ct">谈笑间,有了一套房<span class="cc">91</span></div></div><div class="card mini"><div class="ct">与林美女砍价<span class="cc">96</span></div></div><div class="card mini"><div class="ct">独创赚钱的“开工仪式”<span class="cc">97</span></div></div><div class="card mini"><div class="ct">让明所长放点“血”<span class="cc">98</span></div></div><div class="card mini"><div class="ct">如何打造个人 IP<span class="cc">436</span></div></div><div class="card mini"><div class="ct">谋事找有钱的,干事找缺钱的<span class="cc">641</span></div></div></div></div></div></section>
+<section class="topic" id="sec-other"><header class="topic-head"><div class="badge">伍</div><div><h2>其他杂项专题</h2><p class="sub">手相 · 八字 · 风水 · 笔迹 · 听声 · 医术等</p><p class="note">十一类技巧,同类理论 / 方法 / 案例归入一框,案例条目做成小卡</p></div></header><nav class="localtoc"><a href="#ot-cat-0">一、手相</a><a href="#ot-cat-1">二、八字命理</a><a href="#ot-cat-2">三、风水地理</a><a href="#ot-cat-3">四、笔迹学</a><a href="#ot-cat-4">五、微表情 / 察人术
+
+## 理论
+
+1. **察人之术高于测字秘牒**</a><a href="#ot-cat-5">六、听声术</a><a href="#ot-cat-6">七、武功气功</a><a href="#ot-cat-7">八、医术与单方</a><a href="#ot-cat-8">九、算命衍生</a><a href="#ot-cat-9">十、魔术/玄术
+
+## 理论
+
+1. **魔术=手法+表演**</a><a href="#ot-cat-10">十一、商业识人术</a></nav><div class="topic-body"><div class="cat"><h3 id="ot-cat-0">一、手相</h3><div class="theory"><h3 id="ot0-h1">理论</h3>
+<ol><li><strong>手指的粗细与心智</strong><span class="cite">第 511 章</span>：手指细长者，多属于脑力劳动者，心思细腻，主意比较多，修养也好；手指粗短者，缺乏主见和定力。这是手相学最基础的人格判断。</li><li><strong>手是真实的脸</strong><span class="cite">第 569 章</span>：脸可以伪装，手不会伪装——「看人不要看脸，要看手。手是真实的脸」<span class="cite">第 569 章</span>。</li><li><strong>手的疾病体征</strong><span class="cite">第 518 章</span>：手相上体现的是身体的病，是一种生命体征的反映（如"伸手指向空中，手指时分时合，经常踢掉被子"——神志不清之症）。但中毒类投毒则手相看不出来。</li><li><strong>骨节=寿元</strong><span class="cite">第 271 章，舒老</span>：舒爹"摸了摸，捏了捏他的手指的关节"——关节的紧实/松弛判断精气与寿命。</li></ol>
+<h3 id="ot0-h1">具体方法</h3>
+<ul><li><strong>触摸指节</strong>：把脉式判断寿元<span class="cite">第 271 章</span></li><li><strong>看手指粗细与长度</strong>——脑力/体力劳动者分类</li><li><strong>看手背青筋的颜色变化</strong>——判断排毒进度（克鲁兹案例）</li></ul>
+<h3 id="ot0-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 271 章</span></strong>：舒爹摸依帆的手指关节，断其身体状况。</li><li><strong><span class="cite">第 511 章</span></strong>：郑先生的朋友——菲律宾西医兼手相师克鲁兹，自己被人下毒（手相无法预防中毒）。</li><li><strong><span class="cite">第 569 章</span></strong>：万山红教春来看手而非看脸。</li><li><strong><span class="cite">第 193 章</span></strong>：年轻徒弟自学手相书，给同学看手相赚钱（10-20 元一次）。</li><li><strong><span class="cite">第 417 章</span></strong>：余水春"看一下手相，就知道我第一个是儿子；摸摸我的双手，就知道我是晚婚"——常南溪的神技。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-1">二、八字命理</h3><div class="theory"><h3 id="ot1-h1">理论</h3>
+<ol><li><strong>阴阳五行说</strong>：肝胆病脸色发黄，肝胆五行为木，酉金月金旺则木死；冬季五行水当令，水助木生长<span class="cite">第 22 章</span>。治病救人讲究五行对应月份。</li><li><strong>五行平衡取名</strong><span class="cite">第 162-170 章</span>：名字按金木水火土五行平衡原则。缺者补之、多者损之；声调和谐；寓意深远。三原则合一。</li><li><strong>时辰定格局</strong><span class="cite">第 169 章</span>：五行已定格局，靠名字来补。</li><li><strong>命与运</strong><span class="cite">第 286 章</span>：命是先天，运是后天。</li><li><strong>童子命</strong><span class="cite">第 282 章</span>：相传是天上神仙的侍童侍女，犯错被贬至人间。特征：少年得志、一帆风顺、不染尘埃，心比天高，命比纸薄（张某荣、梅某芳、邓某君等）。</li><li><strong>逢九生变</strong><span class="cite">第 544 章、第 576 章</span>：太极中，迷字 9 笔，代表变化；与"逢七生变"互为表里。</li><li><strong>逢七生变</strong><span class="cite">第 544 章、第 838 章</span>：源于《易经》64 卦，每卦 6 爻，第六爻后进入下一卦。治疗节点的依据（如第 7、14、21、28、35、42、43、52、61、70 天）。</li><li><strong>数字变化判定</strong><span class="cite">第 577 章</span>：43、52、61 这三组数，前面的十位数大于后面个位数，才能检查出正气上升邪湿下降——"前面的十位数小于后面个位数，表示当时还弱小"。</li><li><strong>八字推四柱</strong><span class="cite">第 8141 行</span>：动婚早晚、命格（先立业后成家）、配偶特点（"不管事"的女子）等皆可由八字推断。</li><li><strong>贫穷富贵辨析</strong><span class="cite">番外 18 章</span>：<ul><li><strong>穷</strong> = 穴+躬，住洞穴没有家。没有宅基地。</li><li><strong>富</strong> = 宝盖头+一口田，有房有田。</li><li><strong>贫</strong> = 挣钱少；<strong>贱</strong> = 贝+两个戈，钱受到伤害。</li><li><strong>贵人</strong> = 城市里有财富有地位的人。</li><li>穷人思维：宁可弯曲着身子（躬）住在洞穴而不思改变，宁可弯曲着身子向人乞讨。</li></ul></li></ol>
+<h3 id="ot1-h1">具体方法</h3>
+<ul><li><strong>金木水火土查字</strong><span class="cite">第 505 章</span>：直接百度搜索"五行属木的字有哪些"，全部跳出来。</li><li><strong>改名/改生日</strong><span class="cite">第 226 章</span>：①改成带水的名字；②把阴历 27 号（火日）改为 17 号，提前十天过生。</li><li><strong>八字论婚姻</strong><span class="cite">第 576 章</span>：属蛇人最佳婚配属猴（上上等），其次属鸡、属牛；忌属虎——虎蛇相冲。</li><li><strong>择日开业/搬家/婚嫁</strong><span class="cite">第 36 章、第 103 章</span>：开业依生辰八字推算；结婚依男女八字合推；搬家准备过火炉子。</li><li><strong>儿童八字推未来</strong><span class="cite">第 77 章</span>：常南溪对丁总之子："有千里之才，赴百里之任"——不轻易算儿童八字。</li></ul>
+<h3 id="ot1-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 77 章</span></strong>：常南溪论丁总儿子八字"有千里之才，赴百里之任"。</li><li><strong><span class="cite">第 226 章</span></strong>：万山红对五行全属火、名字中带"枫"（木，引火）的客户改名建议。</li><li><strong><span class="cite">第 282 章</span></strong>：玉姐给南溪出一个已死之人的八字，南溪答"童子命"——拒绝给死人算命。</li><li><strong><span class="cite">第 417 章</span></strong>：南溪给玉姐论童子命。</li><li><strong><span class="cite">第 470 章</span></strong>：邬先生 36 岁之前的事。</li><li><strong><span class="cite">第 496 章</span></strong>：1977 年属蛇、五行火旺、丁巳蛇年、沙中土分析。</li><li><strong><span class="cite">第 859 章</span></strong>：楚倩（2001 年属蛇）——婚姻属蛇配属猴最佳。</li><li><strong><span class="cite">第 576 章</span></strong>：楚倩问"如果我去做水果生意行吗"——万山红分析"去"字（甲骨文"人"+"口"），与张总合作，张字展开双赢。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-2">三、风水地理</h3><div class="theory"><h3 id="ot2-h1">理论</h3>
+<ol><li><strong>龙去脉 → 大势 → 小局</strong><span class="cite">第 28 章</span>：传统风水的标准观察顺序。</li><li><strong>桌卦</strong><span class="cite">第 333 章</span>：极端断事法。卦落在桌上，不能落到地上（其一）；卦次次是宝卦，方算成功（其二）。</li><li><strong>凤凰引路</strong><span class="cite">第 63 章、第 113 章</span>：大鸟（凤凰）从远处扑展而来，盘旋一周后落在某棵大树上——这棵树之下才是最好墓穴。鸟来报信引路。</li><li><strong>灵物指穴</strong><span class="cite">第 113 章</span>：蛇卧之地是灵物，按风水学叫"灵物指穴"——蛇早不出现晚不出现，时辰到了才出现，即是来指穴。</li><li><strong>后无背山还有水坑</strong><span class="cite">第 63 章</span>：跌倒都没人扶。</li><li><strong>动土祭文</strong><span class="cite">第 266 章</span>：百鸟湖动土祭文——上望天助神灵保佑，下请土地清静四方。</li><li><strong>仙人掌挡屋角</strong><span class="cite">第 22 章</span>：对面高楼屋角正对窗子，摆三瓶仙人掌以"刺"挡"刺"。</li><li><strong>主位不能背字（时）</strong><span class="cite">第 22 章</span>：测字师背后墙上不能挂字画。</li><li><strong>貔貅摆法</strong><span class="cite">第 271 章</span>：貔貅不要正对大门，呈 45 度斜对着门，两边各一只，貔貅头对着门摆成"八"字形状。</li><li><strong>西面不能空</strong><span class="cite">第 318 章</span>：陈姓，陈字中有"东"，万物以阴阳平衡为原则，儿子要坐西朝东。</li><li><strong>左病右治，右病左治</strong><span class="cite">第 583 章</span>：中医医术基本原则——右腿抽筋要活动左腿左手。</li><li><strong>改名改运</strong><span class="cite">第 508 章</span>：中甸县改名香格里拉——名字寓意好听起来又舒服即可。</li><li><strong>"宁"字五行</strong><span class="cite">第 413 章</span>：五行属火，南方也属火，方位必去南方；宁有归宁之意。</li></ol>
+<h3 id="ot2-h1">具体方法</h3>
+<ul><li><strong>软件+罗盘定位</strong><span class="cite">第 28 章、第 63 章</span>：先用地形地貌软件（如卫星图）定大势，再到现场用罗盘定方位。</li><li><strong>墓地三看</strong>：一看龙形犬地（山形像龙或犬）；二看山脉走向有否被挖断（右脉一断即为废地）；三看对面山头有无凤凰引路。</li><li><strong>桌卦仪式</strong>：抓一把卦在空中抛，卦落地，唱"大吉大利——菩萨领情——上上卦"。</li><li><strong>大门尺寸与朝向</strong><span class="cite">第 46 章</span>：百年药店的大门尺寸与朝向可借鉴给茶馆——风水师将他人"吉门"复制使用。</li><li><strong>看风水三步</strong><span class="cite">第 182 章</span>：① 远处高点（如对面三楼）拍山势照片；② 蹲在当事人地坪前画山形（如画只老虎轮廓）；③ 谁家的事到谁家门口说，不吉利不上别人家说。</li></ul>
+<h3 id="ot2-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 22 章</span></strong>：万山红在"风花雪月"茶馆布置：仙人掌三瓶挡屋角；背后撤下书法家字画（不背字/时）；座位前茶几、对面一高一矮两条凳子。</li><li><strong><span class="cite">第 28 章</span></strong>：师父（弘一道长）带万山红为邓总看风烟亭——为避风头师父说"十有九个要失败"，留了一条后路。</li><li><strong><span class="cite">第 63 章</span></strong>：邵友祥祖母下葬，凤凰引路改葬到村长家对面山头的大树下。</li><li><strong><span class="cite">第 113 章</span></strong>：乔四元家墓地，遇灵蛇指穴。</li><li><strong><span class="cite">第 182 章</span></strong>：蒋医师弟弟家——屋后山势似老虎，一只脚踩在屋顶上，建屋后挖两米伤到虎趾，前年侄儿车祸。要换地方。</li><li><strong><span class="cite">第 266 章</span></strong>：百鸟湖动土仪式——曹总主祭位、万山红陪祭位，上香鞠躬。</li><li><strong><span class="cite">第 333 章</span></strong>：桌卦决定一生——万山红出道之卦。</li><li><strong><span class="cite">第 290 章</span></strong>：冬子请万山红看邓总开发的风烟亭住宅区风水。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-3">四、笔迹学</h3><div class="theory"><h3 id="ot3-h1">理论</h3>
+<ol><li><strong>无意识笔迹</strong><span class="cite">第 5 章</span>：一个人为什么要写这个字而不是那个字，这一瞬间的决定，绝对带着写字者身上目前的信息。</li><li><strong>年纪与笔画</strong><span class="cite">第 59 章、第 93446 行</span>：年纪大的人写一横，起笔长，收笔短；年轻人一横，起笔短，收笔长。青年人面对未来，落笔潇洒；年纪大了，喜欢回忆，落笔重、短促。</li><li><strong>笔迹与人格对应</strong><span class="cite">第 257 章</span>："特"字干净利落，最后一点力透纸背，叫杀伐果断，从不拖泥带水；对下属要求过严，关起门来会拍桌打椅，出了门则不记仇。</li><li><strong>笔迹识别真伪</strong><span class="cite">第 59 章</span>：公安破案认定笔迹，找"特殊字"。模仿者形快实慢，转折处必露破绽。</li><li><strong>笔迹与字本身分析分离</strong>：测字分两部分——字的内容与笔迹本身传达的信息。</li></ol>
+<h3 id="ot3-h1">具体方法</h3>
+<ul><li><strong>特殊字比对</strong>：让对方连续写五个"的"字，发现有相同的笔迹特征，说明是其本人的无意识写法。</li><li><strong>观察起笔与收笔节奏</strong>：分析果断/犹豫、内向/外向。</li><li><strong>观察连笔密度</strong>：连笔特别多，过渡非常自然——性格大气、开合。</li><li><strong>观察落笔力度</strong>：最后一点用力 → 毅力足、做事有条不紊。</li><li><strong>观察歪斜度</strong><span class="cite">第 108 章</span>：歪歪斜斜的字里，一定有难言之隐——心理紧张则字形不正。</li><li><strong>笔锋的"杀伐果断"</strong>：力透纸背的最后一点代表性格决断力。</li><li><strong>观察握笔姿势</strong><span class="cite">第 66009 行</span>：手指粗壮有力、有疤痕、握笔紧、一笔一划笔划不相连——警惕性高的人。</li></ul>
+<h3 id="ot3-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 59 章</span></strong>：师父教万山红——分析"合"字（男子强势，合伙人占少）；分析"玉"字（女子刚劲有力，最后一点重——毅力足有条不紊）。</li><li><strong><span class="cite">第 108 章</span></strong>：测"赌"字——歪歪斜斜、心非常紧张；下定决心的赌徒一气呵成，写完会在旁边把笔尖一顿戳出洞。</li><li><strong><span class="cite">第 212 章</span></strong>：师父从"火"旁起笔快、笔迹浅而连笔多，"因"字写得很慢、连笔少、一笔一划极为用力——分析来人焦躁中又有迟疑。</li><li><strong><span class="cite">第 3477 行</span></strong>：测"出"字——两个"山"字组成，分析希望女儿快点出嫁。</li><li><strong><span class="cite">第 16018 章</span></strong>：张局长"签名"巨额经济纠纷——笔迹真伪鉴定。</li><li><strong><span class="cite">第 25733 行</span></strong>：测"特"字——分析对下属过严但不记仇。</li><li><strong><span class="cite">第 93446 行</span></strong>：青年人 vs. 年长者的横画差异。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-4">五、微表情 / 察人术
+
+## 理论
+
+1. **察人之术高于测字秘牒**</h3><div class="theory"><h3 id="ot4-h1">理论</h3>
+<ol><li><strong>察人之术高于测字秘牒</strong><span class="cite">第 5 章</span>：这一本比《测字秘牒》难多了。看了人家，要说出个一二三，人家还要承认。</li><li><strong>进门第一眼</strong><span class="cite">第 5 章</span>：观察者用余光——趁你不注意观察你的表情举止。一进门，眼神就出卖了他。</li><li><strong>曾国藩四诀</strong><span class="cite">第 511 章、第 569 章</span>：察人四句话记牢即可（"邪正看眼鼻，真假看嘴唇，功名看气概，富贵看精神"——曾国藩咸丰八年九月二十七日日记总结）。</li><li><strong>曾国藩再加一条</strong><span class="cite">第 511 章</span>：给女人看相不一定准。</li><li><strong>望闻问切中的"望"</strong><span class="cite">第 67265 行</span>：看相其实就是运用中医望闻问切中的"望"。</li><li><strong>手是真脸</strong><span class="cite">第 569 章</span>：脸可伪装，手不会。</li><li><strong>三岁看小，七岁看老</strong><span class="cite">第 511 章</span>：从童年照片可推骨相定型。</li><li><strong>数字定律</strong><span class="cite">第 84993 行</span>：一个人听别人说话时，大拇指与食指张开成八字形搁在下巴——代表他很自大，居高临下地听。</li></ol>
+<h3 id="ot4-h1">具体方法——眉毛篇<span class="cite">第 308 章</span></h3>
+<ul><li><strong>压低眉毛</strong>：防卫措施；眉毛完全放下来——大发雷霆的前奏。</li><li><strong>斜挑眉毛</strong>：带有恐惧、担心、不理解、疑惑——感觉来者不善。</li><li><strong>眉毛基本不动，眼角放出一丝轻蔑</strong>：胸有成竹、不屑回应。</li></ul>
+<h3 id="ot4-h1">具体方法——笑容篇<span class="cite">第 308 章</span></h3>
+<ul><li><strong>开怀大笑（哈哈哈哈哈）</strong>：脸上肌肉全动，从心底发出。笑声连贯是真诚。</li><li><strong>嘿嘿</strong>：笑声不连贯，假笑，内心并不认同。</li><li><strong>嘻嘻</strong>：窃喜、幸灾乐祸。</li><li><strong>嚯嚯</strong>：惊奇、糊弄、嘲弄。</li><li><strong>抿嘴笑</strong>：强烈戒备（牙齿不好看者除外）。</li><li><strong>一侧脸笑、另一侧僵硬、嘴角下撇</strong>：尴尬、难以抉择、害怕。</li><li><strong>假笑</strong>：嘴角微微上翘，收回去很快。职业笑。</li><li><strong>脸别到一边，用眼角看人，脸上微微笑</strong>：女人常用——喜欢或勾引。</li></ul>
+<h3 id="ot4-h1">具体方法——谈判与人心篇</h3>
+<ul><li><strong>"转移框架"</strong><span class="cite">番外 25 章</span>：用相对论的方法化解对方的要求——让对方在不知不觉中接受你的说法。</li><li><strong>笑着骂人</strong>：只要笑着骂，怎么骂都行，把真实感受骂出来；旁人看来大度宽容，回击力度虽大但态度与人为善。</li><li><strong>骂人有气势有文采</strong>：历数缺点，多用排比句（诸葛亮骂王朗式的）。</li><li><strong>骂人不带脏字</strong>（郭德纲手法）：去网上查。</li><li><strong>建群自我组织</strong><span class="cite">第 13991 行</span>：揣摩账本——记下领导对谁真心、对谁敷衍。</li><li><strong>不急着接话</strong><span class="cite">第 45511 行</span>：诱惑对方先说，慢慢套出关键。</li></ul>
+<h3 id="ot4-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 1165 行</span></strong>：道长教"测字之术，首在察人"——进门眼光不正者即跑江湖的。</li><li><strong><span class="cite">第 153 章</span></strong>：亦总安排三个女孩陪师父——万山红识别为"察人饭局"，分析谁最有才华。</li><li><strong><span class="cite">第 17840 行</span></strong>：奚若琴是搞公安的，万山红那点微表情都被她揣摩透彻。</li><li><strong><span class="cite">第 257 章</span></strong>：测"特"字——主管型人格画像。</li><li><strong><span class="cite">第 308 章</span></strong>：教世玉微表情（寡妇与光棍的对联故事——眉眼笑全场景）。</li><li><strong><span class="cite">第 44375 行</span></strong>：克鲁兹案例——摸脸、擦鼻子就是紧张；特工掌握微表情后不会擦鼻子。</li><li><strong><span class="cite">第 45511 行</span></strong>：宁先生与妻子吵架——老宁不断打断别人说话（自以为是型）；推断妻子进入更年期 + 美女暮年综合症。</li><li><strong><span class="cite">第 511 章</span></strong>：教春来曾国藩察人四诀。</li><li><strong><span class="cite">第 569 章</span></strong>：教春来手是真脸。</li><li><strong><span class="cite">第 570 章</span></strong>：详细教曾国藩察人术。</li><li><strong><span class="cite">第 84993 行</span></strong>：大拇指与食指八字形——傲慢听人的信号。</li><li><strong><span class="cite">第 85311 行</span></strong>：师徒夜谈后洋洋自得的神态——察言观色。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-5">六、听声术</h3><div class="theory"><h3 id="ot5-h1">理论</h3>
+<ol><li><strong>脚步辨病</strong><span class="cite">第 35 章</span>：苏西坡家祖传规矩——坐在楼上，听病人上楼的脚步声，就要判断他患的什么病。学徒时，在楼下看病，看满十年后，再到楼上看；楼上看不准，改行去抓药。苏家三兄弟，现在只有苏醒在楼上看病。</li><li><strong>声音里的身份</strong><span class="cite">第 3831 行</span>：师父一听声音，立即起身——"神龙见首不见尾的释延峰英雄来了？"——通过声音辨认江湖高手。</li><li><strong>不同地方的脚步声不同</strong><span class="cite">第 11950 行</span>：长期练芭蕾舞的人，走路都走"外八字"——两个脚尖朝外。</li></ol>
+<h3 id="ot5-h1">具体方法</h3>
+<ul><li><strong>听上楼脚步</strong>：判断病人所患何症（苏醒案例）。</li><li><strong>听走路姿势</strong>：外八字 → 芭蕾舞演员/日本人。</li><li><strong>听吐字节奏</strong>：板眼、抑扬、顿挫——判断教育程度、心理状态。</li></ul>
+<h3 id="ot5-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 35 章</span></strong>：苏西坡家二楼木楼梯——下楼不需问病，听脚步声即知。</li><li><strong><span class="cite">第 11950 行</span></strong>：从走姿识别舞蹈老师。</li><li><strong><span class="cite">第 11950 行</span> / <span class="cite">第 34791 行</span></strong>：三个女子中两个走路是"外八字"，判断跳芭蕾舞或日本人。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-6">七、武功气功</h3><div class="theory"><h3 id="ot6-h1">理论</h3>
+<ol><li><strong>定身功</strong><span class="cite">第 22 章</span>：一种防身术，叫"定身功"，其实是一种药功。别人坐在那儿，你要对方站不起来。师父把三味药写在纸上（XX50 克、XX100 克、XX200 克），随身带，事到万一方可出手。</li><li><strong>呼蛇功</strong><span class="cite">第 27 章</span>：呼蛇之术，只是一种药功。延峰大师嘱咐："不能打蛇"。</li><li><strong>听字术</strong><span class="cite">第 27 章</span>："延峰抱拳道：既然道长开了口，我做个游戏吧——耳朵听字"——听字分两种：<ul><li><strong>有托</strong>：表演者随意拿起一张纸团一听，说是个某某字，托儿答对。</li><li><strong>没托</strong>：先在口袋里装一张一模一样的纸团，表演时摸上一张写了字的纸团，右手将白纸团放在耳边听，左手将有字的纸团在手心弓开。靠练，炉火纯青时别人根本看不出。</li></ul></li><li><strong>顶水法</strong><span class="cite">第 369 章</span>：溺水急救法。传统方法——大锅倒扣，人趴在锅上头朝下，用力挤压让水吐出。没有锅，就让父亲弓背当锅。</li><li><strong>气功</strong><span class="cite">第 370 章</span>：中国人讲究气、气功、气场。我不用和保镖接触，就可以让他倒地。</li><li><strong>点穴术</strong><span class="cite">第 583 章</span>：明朝《武备志》记载人体有 <strong>36 个死穴，72 个麻穴</strong>。死穴基本在五腑六腑之一块；扎针灸关键是深浅把控——深了伤人，浅了没用。麻筋分五类：手部、肩部、颈部、腰部、腿部。</li><li><strong>"气"与左病右治</strong><span class="cite">第 583 章</span>：右腿抽筋要活动左腿左手。</li><li><strong>针灸八法</strong><span class="cite">第 546 章</span>：失传的"针灸八法"——夹在蒋医师家祖传针灸书的一张纸里。"中医在民间，但民间也随着时代转变"，八法一旦遗失则永远埋没。</li><li><strong>手法医学</strong><span class="cite">第 377 章</span>：不用任何器械，连针灸都不要，凭手指指压不同的穴位即可治病。包括：经穴推拿、点穴、正骨、儿科按侨、腑脏点络、腹脐点揉、捏筋拍打、民间窍穴十二手、振击药指、子午流注、四应六法、捏脊整整脊、天竺按术。</li><li><strong>太极舞</strong><span class="cite">第 589-590 章</span>：表面是秧歌步——双脚交叉地跳。但用河图尺寸布四个点（中间 05、下 16、左脚踏 49、下 27、右脚踏 38）。无论怎么踏，16+49=65，27+38=65 都踏在尾数 5 上（阴阳平衡）；14/69 之和为 10，2/8/3/7 之和均为 10（踏在尾数 0 上）。05 在河图洛书代表中间位置——不偏不倚，阴阳平衡。</li></ol>
+<h3 id="ot6-h1">具体方法</h3>
+<ul><li><strong>定身粉配制</strong>：三味药（具体配方书中不公开）。撒在敌人附近，敌人即不能动。</li><li><strong>听字手法</strong>：右手举纸团耳边，左手心弓开纸团；或与托儿事先串通轮流展示。</li><li><strong>呼蛇手法</strong>：用手拍地面三下，嘴里念词（合掌拍），蛇会爬出（其实是药功驱蛇）。</li><li><strong>顶水急救</strong>：<ol><li>双腿跪地弓背当锅，让溺水者头朝下趴在背上。</li><li>一挤一压（每回合 24 下，最多 48 下）。</li><li>吐水后抬上岸仰卧，做心肺复苏。</li><li>嘴对嘴呼吸。</li></ol></li><li><strong>点穴动作</strong>：两指（食指+中指）强力打击尺神经沟（肘关节内侧），小指无名指失去知觉，前臂内侧疼痛。</li><li><strong>练点穴基本功</strong>：① 木盆装满沙子，每天早上用食指中指插沙子；② 或水中夹豆腐，练一年手指才有劲。</li><li><strong>太极舞步伐</strong>：<ol><li>双脚站在白点（四个按河图定位的点）。</li><li>左脚向右前方跨一步 → 右脚向左前方跨一步 → 左脚退回原点 → 右脚退回原点。每次四步。</li></ol></li><li><strong>手压法指压穴位</strong>：左手中指压在脐肚上两寸，连压两下保持不动一分钟；告诉对方保持一分钟即可。</li></ul>
+<h3 id="ot6-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 22 章</span></strong>：师父授万山红"定身功"（防莫瞎踢馆）。</li><li><strong><span class="cite">第 27 章</span></strong>：释延峰当众表演听字术（"我是厨师"四个字、我写的"这可能吗"四个字）。</li><li><strong><span class="cite">第 369 章</span></strong>：菲律宾 Alona 海滩——万山红救活溺水少女何露露。用顶水法，她父亲弓背当锅；唐曼口吸积水；最终吐出三口水。</li><li><strong><span class="cite">第 370 章</span></strong>：与克鲁克拳击保镖对打——克鲁克对中国气功的认知。</li><li><strong><span class="cite">第 377 章</span></strong>：克鲁兹家——指压调理腹痛（脐上两寸两穴+保持一分钟）。唐曼翻译"寻找了几千年"。</li><li><strong><span class="cite">第 543 章</span></strong>：唐曼在五个"梅花掌"位置之间画曲线——克鲁兹中毒后背上五点。</li><li><strong><span class="cite">第 546 章</span></strong>：在蒋医师家翻祖传针灸书——夹着的"针灸八法"纸。</li><li><strong><span class="cite">第 583 章</span></strong>：泰国对阿庇发功——让他抬不起脚；秦晓华等四人体验尺神经麻穴（一分钟恢复）。</li><li><strong>第 589-590 章</strong>：在乍仑家水泥坪用腻子粉画太极图、布四白点，达娜跳"太极舞"康复——后来成为全村网红活动。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-7">八、医术与单方</h3><div class="theory"><h3 id="ot7-h1">理论</h3>
+<ol><li><strong>单方</strong><span class="cite">第 222 章、第 320 章</span>：中医方药分七种——大、小、缓、急、奇、偶、复。所谓"单味药"，仅由一味中药组成，乌乡人称之为"单方"。吾师弘原道长将半部《单方》传给师父，师父又续写一部分。</li><li><strong>手法医学"病到手除"</strong><span class="cite">第 377 章</span>：发起人亲率团队 700 余人，走遍黄河长江流域，拜访记录及临床验证 4 万多位民间有一技之长的医疗绝技人。仅凭一手指，指压人体不同的体位即可调理不同的疾病。</li><li><strong>气功治病</strong><span class="cite">第 542 章</span>：中国人讲究气，气功，气场。"你们中国人说的气功……唐小姐这么健康，原来是练功的效果"——唐曼对气功的认可。</li><li><strong>正骨术</strong><span class="cite">第 309 章</span>：万山红被授予正骨之术、针灸之术（拜舒老）。念："郭祥先师，皇甫谧祖师，我今授予万氏山红正骨之术、针灸之术。天地为证，治病救人。"</li><li><strong>针灸八法</strong><span class="cite">第 546 章</span>：失传已久，夹在祖传针灸书里——万山红后来收入《万法归一》。</li></ol>
+<h3 id="ot7-h1">具体方法</h3>
+<ul><li><strong>单方治病原则</strong><span class="cite">第 330 章</span>：道家可以给人开单方（尽量不要开处方）。单方就是一味药治病。</li><li><strong>针灸基本功</strong><span class="cite">第 270 章</span>：家中上三代都是针灸师。看悟性。虽说是针灸，同样要读医书。</li><li><strong>针灸师执业要求</strong>：第一，这是种职业要求；其次，减轻病人的心理压力，增加信任度。扎针灸要脱衣服，穿白大褂戴口罩（跟穿道袍是一回事）。</li><li><strong>指压操作法</strong><span class="cite">第 377 章</span>：左手中指压在脐肚上两寸，连压两下保持一分钟不动；另两个穴位一样的压法。</li><li><strong>针灸进针</strong>：能准确进针三分之一就算入门<span class="cite">第 33962 行</span>。</li></ul>
+<h3 id="ot7-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 35 章</span></strong>：苏西坡——枸杞子 25 克+山药 50 克+粳米 100 克，治耳鸣健忘头晕烦躁腰膝酸软。</li><li><strong><span class="cite">第 183 章</span></strong>：西坡先生的单方——从山上采集草药晒干，和硫磺、冰片一起研成粉末，涂于患者私处（治银屑病/类似香妃病）。</li><li><strong><span class="cite">第 187 章</span></strong>：依帆学针灸按摩——投师舒老，三代祖传针灸。</li><li><strong><span class="cite">第 222 章</span></strong>：读《单方》并教单方，几十个常用单方。</li><li><strong><span class="cite">第 309 章</span></strong>：万山红正式拜舒老为师——授予正骨术、针灸术、神主牌位郭祥（正骨祖师）、皇甫谧（针灸祖师）。</li><li><strong><span class="cite">第 377 章</span></strong>：克鲁兹服泻药后腹痛——指压脐上两寸穴位解决。</li><li><strong><span class="cite">第 546 章</span></strong>：蒋医师家祖传针灸书中的"针灸八法"——失传之宝。</li><li><strong><span class="cite">第 569 章</span></strong>：西坡家银屑病药方——主要靠外用涂药。</li><li><strong><span class="cite">第 60733 行</span></strong>：中医针灸加气功治好一个奇怪病（多回合一例）。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-8">九、算命衍生</h3><div class="theory"><h3 id="ot8-h1">理论</h3>
+<ol><li><strong>取名三原则</strong><span class="cite">第 168 章</span>：① 金木水火土五行平衡，缺者补之，多者损之；② 声调和谐，念起来顺口；③ 寓意深远。</li><li><strong>复姓取名</strong><span class="cite">第 170 章</span>：复姓取名极易出彩（司马、令狐、欧阳、上官、东郭）。金庸先生爱用复姓——文化自带诗意。</li><li><strong>小区不能取名"苑"</strong><span class="cite">第 169 章</span>：小区取名"某某苑"尚可，个人住宅不能取——"苑"代表花木茂盛，住家适用，但过度张扬反而招祸。</li><li><strong>生男生女规律</strong><span class="cite">第 45976 行</span>：问结婚日期总结规律——通过结婚日期反推生男生女。</li><li><strong>玄关暗合</strong><span class="cite">第 13508 行</span>、<span class="cite">第 88455 行</span>：想生崽时，跑进一个男孩（早不来迟不来偏偏这时来）——就是生男孩。这叫"玄关暗合"。</li><li><strong>玄关暗合测字法</strong><span class="cite">第 3310 行</span>：测"万"字走过来递给我，万字加走之成"迈"字——说明迈开了脚步，不仅是想法，而是有实际行动。</li><li><strong>香妃病</strong><span class="cite">第 173 章</span>：银屑病（顽固性皮肤病）。"苏西坡治这种病，主要靠外用涂药。从山上采集草药晒干，和硫磺、冰片一起研成粉末，涂于患者私处"。</li><li><strong>童子命</strong><span class="cite">第 282 章</span>：心比天高，命比纸薄；少年得志、一帆风顺；多为天上侍童侍女被贬。</li><li><strong>择日开业</strong><span class="cite">第 36 章</span>：开业依来人生辰八字推算；结婚依男女八字合推。元旦结婚可一句话："国家法定节日"。</li><li><strong>搬家规矩</strong>：准备过火炉子，从旧居提到新房子，叫"过火"，表示生生不息。</li></ol>
+<h3 id="ot8-h1">具体方法</h3>
+<ul><li><strong>五行查字</strong><span class="cite">第 505 章</span>：① 网上搜索"五行属木的字有哪些"；② 同样方法查具体字的五行。</li><li><strong>生男生女</strong>：利用结婚日期+玄关暗合+来客性别判断。</li><li><strong>改名改生日</strong><span class="cite">第 226 章</span>：① 改带水的名字；② 把火日生日改到水日。</li><li><strong>香妃病涂药</strong>：草药+硫磺+冰片研末外涂。</li><li><strong>童子命识别</strong>：少年得志+一帆风顺+心比天高+命比纸薄。</li></ul>
+<h3 id="ot8-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 104 章</span></strong>：帮姐姐测"生男生女"——玄关暗合。</li><li><strong><span class="cite">第 108 章</span></strong>：歪歪斜斜的字里有难言之隐（赌博者）。</li><li><strong><span class="cite">第 112 章</span></strong>：八爷授方（西坡先生银屑病单方）。</li><li><strong><span class="cite">第 105 章</span></strong>：香妃病（书名章节）——即银屑病。</li><li><strong>第 168-170 章</strong>：取名原则、复姓取名、高总孙"端木峰"五行缺水→取"峰"补。</li><li><strong><span class="cite">第 282 章</span></strong>：玉姐问童子命。</li><li><strong><span class="cite">第 464 章</span></strong>：取名要耳目一新（石头取名、楼盘取名）。</li><li><strong><span class="cite">第 505 章</span></strong>：女子问徐明睿 vs 徐睿明——睿属金、明属水，金生水更好。</li><li><strong><span class="cite">第 576 章</span></strong>：楚倩测"去"字——玄关暗合（她姓张合作）；分析张字展开之义。</li><li><strong><span class="cite">第 632 章</span></strong>：测字找人才。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-9">十、魔术/玄术
+
+## 理论
+
+1. **魔术=手法+表演**</h3><div class="theory"><h3 id="ot9-h1">理论</h3>
+<ol><li><strong>魔术=手法+表演</strong><span class="cite">第 137 章</span>：师父叮嘱——呼蛇、听字之类，不必说是什么特异功能，要玩就说是跟大家玩个魔术。</li><li><strong>听字术本质是魔术手法</strong><span class="cite">第 27 章、第 137 章</span>：靠手快/与托儿串通——练到炉火纯青时，别人根本看不出。</li><li><strong>搬运术</strong><span class="cite">第 171 章、第 233 章、第 345 章</span>：陈二的"搬运术"——表演级魔术。</li><li><strong>催眠术</strong><span class="cite">第 20780 行</span>：催眠术，先把别人催得迷糊，你在他们的眼皮底下可为所欲为。</li><li><strong>扑克魔术</strong><span class="cite">第 372 章</span>：将三张 A 交给小叶，手中藏一张 A，洗过牌后将藏着的 A 放在牌底倒数第二张。</li><li><strong>矿泉水变酒</strong><span class="cite">第 46987 行</span>：简单戏法，原理是利用化学显色或简单的过滤切换。</li><li><strong>神秘微笑</strong><span class="cite">第 28 章</span>：师父教半年才懂点皮毛——必须让对方感到紧张、神秘、心虚、出汗，"好像我是警察，他是小偷"，又让人感到善意（菩萨境界+神秘+掌控感）。配合点燃印度香+袅袅婷婷的烟雾，效果更好。</li><li><strong>借力打力——"鹰爪"</strong><span class="cite">第 76195 行</span>：警察快要到达前，在五人肩上拍了拍，看起来像点穴，其实是施了点解药。</li></ol>
+<h3 id="ot9-h1">具体方法</h3>
+<ul><li><strong>听字无托手法</strong><span class="cite">第 27 章</span>：口袋先装空白纸团，表演时摸上有字纸团，右手白纸团放耳边，左手有字纸团在手心弓开。靠练。</li><li><strong>扑克近景魔术</strong><span class="cite">第 372 章</span>：袖口藏 A，按牌底倒数第二张插入。</li><li><strong>诱敌深入三步</strong><span class="cite">第 528 章</span>：先暖场 + 出其不意 + 收尾镇场。</li><li><strong>神秘感包装</strong><span class="cite">第 28 章</span>：印度香+神秘微笑+打坐五分钟+一高一矮两凳（心理压力位差）。</li></ul>
+<h3 id="ot9-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 137 章</span></strong>：在凤业餐厅包厢表演听字游戏（让服务员拿纸团）——全桌沸腾。</li><li><strong><span class="cite">第 172 章</span></strong>：陈二在杂技团学魔术。</li><li><strong><span class="cite">第 233 章</span></strong>：当着 30 多人表演"搬运术"。</li><li><strong><span class="cite">第 345 章</span></strong>：晚会上表演搬运术。</li><li><strong><span class="cite">第 372 章</span></strong>：武小松学扑克魔术（追女孩）。</li><li><strong><span class="cite">第 628 章</span></strong>：博彩魔术。</li><li><strong><span class="cite">第 853 章</span></strong>：万山红在众人面前表演气功让阿庇双脚不能抬起。</li></ul>
+<hr></div></div><div class="cat"><h3 id="ot-cat-10">十一、商业识人术</h3><div class="theory"><h3 id="ot10-h1">理论</h3>
+<ol><li><strong>"若想当个大师，你就要把别人当成一条猪"</strong><span class="cite">第 22 章</span>：邓总的"猪论"反过来。人家才把你当成一个大师。摆架子比师父还厉害。</li><li><strong>测字三原则</strong><span class="cite">第 4027 行</span>：① 一事一测；② 长远的事不测；③ 不诚信不测。生死不测。</li><li><strong>借风水之势</strong><span class="cite">第 37 章、第 25 章</span>：邓总先借风水之势，舍得花重金请有名的风水师。房未建而地已热，八字没一撇，猛收预缴款。空手套白狼。</li><li><strong>会造势的人</strong><span class="cite">第 25 章</span>：造势三步——① 借名人；② 借事件；③ 借仪式。</li><li><strong>赚钱先赚名声</strong><span class="cite">第 19304 行</span>：先送锦旗，把名气弄上去。不要个个要送几万，有几个送几万，生意就上来了。</li><li><strong>婚车遇丧车</strong><span class="cite">第 5201 行</span>：迎面撞上，恭喜发财。在后面，拼命都要超过。</li><li><strong>杀鸡翅膀交叉</strong><span class="cite">第 5209 行</span>：搬家时杀鸡没杀死飞了，把鸡的翅膀交叉到一起，它动都不会动（科学原理：压迫动物的脊椎神经）。</li><li><strong>迁居"过火"</strong>：搬家准备生火炉子，从旧居提到新房子——生生不息。</li><li><strong>送葬下雨吉凶</strong>：埋了之后下雨最好——抬棺踩泥泞路滑有闪失。</li><li><strong>营销 vs 推销 vs 促销</strong><span class="cite">第 83899 行</span>：<ul><li><strong>推销</strong>：挨家挨户上门。</li><li><strong>促销</strong>：打折、买一送一。</li><li><strong>营销</strong>：自己弄得满世界都知道，让别人主动来。</li></ul></li><li><strong>"营销中国"</strong><span class="cite">第 83865 行</span>：在外国营销中医——做一道中药鸡汤，别人喝不喝、味道好不好都不要管，只说"这是中国五千年来一道滋补珍品汤"就营销了。</li><li><strong>改名营销</strong><span class="cite">第 508 章</span>：中甸县改名香格里拉——"人们心目中的世外桃源"。</li><li><strong>取名营销</strong><span class="cite">第 51060 行</span>："明明是手机，取个苹果、小米……明明是个网站，取个番茄……这些植物跟手机网站有什么关系？就是潮。"</li><li><strong>IP 造势</strong><span class="cite">第 28548 行</span>：太乙观开光仪式——逐日观天术表演成为独特 IP。</li><li><strong>品牌人格化</strong><span class="cite">第 83887 行</span>：善于营销自己——"为什么坐在乍仑家，让他家待我如上宾？就是善于营销自己"。</li></ol>
+<h3 id="ot10-h1">具体方法——察人识人</h3>
+<ul><li><strong>曾国藩四诀</strong><span class="cite">第 511 章</span>：邪正看眼鼻，真假看嘴唇，功名看气概，富贵看精神。</li><li><strong>手是真脸</strong><span class="cite">第 569 章</span>。</li><li><strong>走路姿势</strong>：外八字（芭蕾/日本人）；走路带风（女强人）；步伐沉重（地位高的人）。</li><li><strong>说话模式</strong>：老是打断别人=自以为是；问"你觉得呢？行不行啊？"=助人型性格；一直沉默=深藏不露。</li><li><strong>看穿着</strong>：草莽出身者即使有钱也爱穿西装；高官退休闲置时爱穿便装。</li><li><strong>称谓变化</strong><span class="cite">第 76331 行</span>：从今天起要改名。他有求于你，你不必称他为向总，叫三球也不妥，你以后叫他胖子——近则昵称，远则非正式称呼。</li><li><strong>采购人才要懂"伎俩"</strong><span class="cite">第 632 章</span>：测字找人才。</li></ul>
+<h3 id="ot10-h1">具体方法——谈判</h3>
+<ul><li><strong>转移框架</strong><span class="cite">番外 25 章</span>：用相对论的方法化解对方的要求。</li><li><strong>笑着骂人</strong><span class="cite">番外 25 章</span>。</li><li><strong>忠孝两全谈判</strong><span class="cite">第 24530 行</span>：留下来是对公司的忠，接母亲过来是对长辈的孝——表现对处理问题的灵活性。</li><li><strong>砍价三步</strong><span class="cite">第 47835 行</span>：出价 1000，砍一半 500，再砍一半 250。在这个基础上来讨价。</li><li><strong>委婉拒绝</strong><span class="cite">第 55188 行</span>：胡总给 1000 块钱就想使唤——"陈总的朋友，不收钱。这是我的原则"。</li><li><strong>释延峰的"抓弱点"</strong><span class="cite">第 19862 行</span>：凡是武搞（比喻断手指、挑脚筋），都是流氓所为。我的办法就是抓别人的弱点。人都是有弱点的，抓住弱点，无往而不胜。</li></ul>
+<h3 id="ot10-h1">具体方法——营销 / 品牌 / IP</h3>
+<ul><li><strong>中甸改名香格里拉</strong>：用事件营销+取名营销。</li><li><strong>百鸟湖"女儿岛"概念营销</strong>：全岛都是女性员工——性别噱头吸引游客（后改"碧玉岛"避开性别歧视）。</li><li><strong>太乙观逐日观天术</strong>：每逢节假日表演——形成固定 IP。</li><li><strong>冬笋探测仪营销</strong><span class="cite">第 43094 章</span>：便携式冬笋探测仪——"钓鱼有水下探测仪，我们为什么不能发明冬笋探测仪呢？"</li><li><strong>取名营销之石</strong><span class="cite">第 65675 行</span>：卖石头依形取名——"出浴"、"展翅高飞"、"相依相恋"、"孔雀开屏"等。</li></ul>
+<h3 id="ot10-h1">具体案例</h3>
+<ul class="caselist"><li><strong><span class="cite">第 25 章</span></strong>：会造势的人——把字画撤下来"主位不能背字（时）"。</li><li><strong><span class="cite">第 28 章</span></strong>：万山红在风花雪月茶馆布置（仙人掌挡屋角、凳子一高一矮、印度香）。</li><li><strong><span class="cite">第 37 章</span></strong>：邓总空手套白狼——先借风水之势放风，再猛收预缴款。</li><li><strong><span class="cite">第 367 行</span></strong>：取名"佛树粉店"——一条街都叫"佛树 XX"，整体营销。</li><li><strong><span class="cite">第 19197 行</span></strong>：万山红工作室——招牌六个大字（白色）+ 一行小字（占卜、测字、风水、心理咨询，红色）。</li><li><strong><span class="cite">第 193 章</span></strong>：年轻徒弟看手相赚钱被明所长识破。</li><li><strong><span class="cite">第 285 章</span></strong>：太乙观开光仪式——逐日观天术表演。</li><li><strong><span class="cite">第 305 章</span></strong>：升降数字（风水罗盘布数字——具体数字秘密）。</li><li><strong><span class="cite">第 308 章</span></strong>：教世玉微表情。</li><li><strong><span class="cite">第 354 章</span></strong>：茶叶海拔（茶域、剪域的取名移花接木）。</li><li><strong><span class="cite">第 369 章</span></strong>：顶水法。</li><li><strong><span class="cite">第 402 章</span></strong>：婴儿气味（洞察——可通过气味判断婴儿健康状态）。</li><li><strong><span class="cite">第 432 章</span></strong>：入错行（万山红教冬子写网络小说——用 IP 与副业改变命运）。</li><li><strong><span class="cite">第 439 章</span></strong>：暴雨占（暴雨来临前的征兆观察）。</li><li><strong><span class="cite">第 505 章</span></strong>：字的五行怎么查。</li><li><strong><span class="cite">第 511 章</span></strong>：惊喜（曾国藩察人四诀）。</li><li><strong><span class="cite">第 515 章</span></strong>：碗字（拆字法测字——本卷未涉及测字）。</li><li><strong><span class="cite">第 544 章</span></strong>：逢九生变（与逢七生变并列）。</li><li><strong><span class="cite">第 546 章</span></strong>：针灸八法（失传）。</li><li><strong><span class="cite">第 569 章</span></strong>：手是真实的脸。</li><li><strong><span class="cite">第 583 章</span></strong>：点穴术是真的。</li><li><strong><span class="cite">第 589 章</span></strong>：太极舞。</li><li><strong><span class="cite">第 600 章</span></strong>：互动式旅游——百鸟湖水战。</li><li><strong><span class="cite">第 607 章</span></strong>：两极型性格（分析万斯邦等角色）。</li><li><strong><span class="cite">第 628 章</span></strong>：魔术。</li><li><strong><span class="cite">第 632 章</span></strong>：测字找人才。</li><li><strong><span class="cite">第 663 章</span></strong>：数字解释（一二三四五六七八九十——人类对世界的认识）。</li><li><strong><span class="cite">第 683 章</span></strong>：曾国藩相人术升级版。</li><li><strong><span class="cite">第 686 章</span></strong>：万山红教手压法、太极舞、点穴、给石匠正骨（综合）。</li></ul>
+<hr>
+<h3 id="ot10-h1">附录：道家与中国文化的"理论自信"</h3>
+<p><span class="cite">番外 17 章</span><span class="cite">第 663 章</span>总结的核心理论：</p>
+<ul><li><strong>道生一</strong>：产生人类。</li><li><strong>一生二</strong>：人类繁衍。</li><li><strong>二生三</strong>：人类有了思维。</li><li><strong>三生万物</strong>：有了思维就能给事物命名（如黄山、长江、电磁波→手机）。</li><li><strong>三</strong> = 思维、意识、改变一切的起点。</li><li><strong>33 元红包</strong>：包给风水师、作法的、和尚道士——就是想通过他的思维来改变万物。</li><li><strong>巫</strong> = 古代以智慧方式出现的人。</li><li><strong>数字一二三四五六七八九十</strong>：<ul><li>一二三四：人类对世界的认识。</li><li>五：变化（叉=变化）。</li><li>六：屋舍（六六大顺=回到自己的屋子=安全感）。</li><li>七：切断（七零八碎、七上八下——切食物上战场）。</li><li>八：相背分散（围猎——从不同方向包抄）。</li><li>九：肘子（十拿九稳）。</li><li>十：完美。</li></ul></li></ul>
+<p><strong>核心观点</strong><span class="cite">番外 17 章</span>：西方国家培植病毒是科学，我们的巫蛊之术就是迷信？西方的建筑学是科学，我们的风水学就是迷信？西方的催眠术是科学，我们的祝由术就是迷信？——"人类都在探索世界。我们一定要坚持文化自信。"</p>
+<hr>
+<h3 id="ot10-h1">全书核心理论体系一览</h3>
+<div class="tscroll"><table><tr><th>类别</th><th>核心思想</th></tr><tr><td>手相</td><td>手指粗细判断脑力/体力；手是真实的脸</td></tr><tr><td>八字命理</td><td>五行平衡、童子命、逢九生变</td></tr><tr><td>风水</td><td>龙去脉大势小局、凤凰引路、灵物指穴、桌卦</td></tr><tr><td>笔迹学</td><td>特殊字比对、起笔收笔、连笔密度</td></tr><tr><td>微表情</td><td>眉毛-眼-笑综合、曾国藩四诀</td></tr><tr><td>听声</td><td>脚步辨病（苏家祖传）</td></tr><tr><td>武功</td><td>定身功、呼蛇功、听字术、顶水法、点穴、太极舞</td></tr><tr><td>医术</td><td>单方、手压法、针灸八法、正骨</td></tr><tr><td>算命衍生</td><td>取名三原则、香妃病涂药、童子命、属蛇婚配</td></tr><tr><td>魔术</td><td>听字无托手法、神秘微笑、扑克近景</td></tr><tr><td>商业识人</td><td>"把别人当猪"、借风水之势、曾国藩四诀、IP 营销</td></tr></table></div></div></div></div></section>
+
+  <footer class="colophon">
+    合订生成于 2026-10-25 · 理论与案例取自五个总结文件,测字十法补自原书<span class="cite">第 4 章</span> · 卡片角标为原书章节号(默认隐藏)。
+  </footer>
+</div></main>
+
+<button id="totop" aria-label="返回顶部">↑</button>
+
+<script>
+(function(){
+  var $=function(s,c){return (c||document).querySelector(s)},
+      $$=function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s))};
+
+  /* ---- 出处开关 ---- */
+  $("#citeToggle").addEventListener("change",function(){
+    document.body.classList.toggle("cites",this.checked);
+  });
+
+  /* ---- 移动端目录 ---- */
+  var sb=$("#sidebar"),bd=$("#backdrop");
+  $("#menubtn").onclick=function(){sb.classList.add("open");bd.classList.add("show")};
+  bd.onclick=function(){sb.classList.remove("open");bd.classList.remove("show")};
+  sb.addEventListener("click",function(e){
+    if(e.target.closest("a")&&window.innerWidth<=960){sb.classList.remove("open");bd.classList.remove("show")}
+  });
+  $$(".navgroup").forEach(function(g){
+    g.querySelector(".nav1").addEventListener("click",function(){
+      $$(".navgroup").forEach(function(o){if(o!==g)o.classList.remove("expanded")});
+      g.classList.add("expanded");
+    });
+  });
+  var first=$(".navgroup");if(first)first.classList.add("expanded");
+
+  /* ---- 滚动高亮 ---- */
+  var spy=$$(".cat>h3[id], .topic-body h3[id], h4[id]"), ticking=false;
+  var nav2map={};$$(".nav2").forEach(function(a){nav2map[a.getAttribute("href").slice(1)]=a});
+  var nav1map={};$$(".nav1").forEach(function(a){nav1map[a.getAttribute("href").slice(1)]=a});
+  window.addEventListener("scroll",function(){
+    if(ticking)return;ticking=true;
+    requestAnimationFrame(function(){
+      ticking=false;
+      var best=null;
+      for(var i=0;i<spy.length;i++){
+        if(spy[i].getBoundingClientRect().top<150)best=spy[i];else break;
+      }
+      $$(".nav2.active,.nav1.active").forEach(function(a){a.classList.remove("active")});
+      if(best){
+        var a=nav2map[best.id];
+        if(a){a.classList.add("active");
+          var g=a.closest(".navgroup");if(g){$$(".navgroup").forEach(function(o){if(o!==g)o.classList.remove("expanded")});g.classList.add("expanded");}
+          var sec=g&&g.getAttribute("data-for");
+          if(sec&&nav1map[sec])nav1map[sec].classList.add("active");
+        }
+      }else{
+        var secs=$$("section.topic"),curSec=null;
+        for(var j=0;j<secs.length;j++){if(secs[j].getBoundingClientRect().top<200)curSec=secs[j];}
+        if(curSec&&nav1map[curSec.id])nav1map[curSec.id].classList.add("active");
+      }
+      $("#totop").classList.toggle("show",window.scrollY>600);
+    });
+  },{passive:true});
+  $("#totop").onclick=function(){window.scrollTo({top:0,behavior:"smooth"})};
+
+  /* ---- 搜索 ---- */
+  var idx=[];
+  $$("#main .card, #main .mcard, #main p, #main li, #main tr, #main h3, #main h4, #main h5, #main h6").forEach(function(el){
+    var t=el.textContent.replace(/\s+/g," ").trim();
+    if(t)idx.push({el:el,t:t,low:t.toLowerCase()});
+  });
+  var q=$("#q"),hits=$("#hits"),list=$("#hitlist"),count=$("#hitcount"),clear=$("#qclear");
+  function locate(el){
+    var d=el.closest("details");if(d)d.open=true;
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+    el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");
+  }
+  function secName(el){
+    var sec=el.closest("section.topic");
+    return sec?sec.querySelector("h2").textContent:"";
+  }
+  function render(){
+    var query=q.value.trim().toLowerCase();
+    clear.style.display=query?"block":"none";
+    if(!query){hits.style.display="none";return}
+    var res=[];
+    for(var i=0;i<idx.length&&res.length<200;i++){
+      var p=idx[i].low.indexOf(query);
+      if(p>-1)res.push({e:idx[i].el,t:idx[i].t,p:p});
+    }
+    list.innerHTML="";
+    res.slice(0,60).forEach(function(r){
+      var s=Math.max(0,r.p-28),snip=r.t.slice(s,s+72);
+      var mark=new RegExp("("+query.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","i");
+      var div=document.createElement("div");div.className="hit";
+      var w=document.createElement("span");w.className="where";w.textContent=secName(r.e);
+      var body=document.createElement("div");
+      body.textContent=snip;
+      body.innerHTML=body.innerHTML.replace(mark,"<mark>$1</mark>");
+      div.appendChild(w);div.appendChild(body);
+      div.onclick=function(){locate(r.e)};
+      list.appendChild(div);
+    });
+    count.textContent="共 "+res.length+" 处匹配"+(res.length>60?"(显示前 60)":"");
+    hits.style.display="block";
+    if(!res.length)list.innerHTML='<div class="hit">没有找到「'+q.value.trim()+'」</div>';
+  }
+  var deb;
+  q.addEventListener("input",function(){clearTimeout(deb);deb=setTimeout(render,160)});
+  q.addEventListener("keydown",function(e){if(e.key==="Escape"){q.value="";render();q.blur()}});
+  clear.onclick=function(){q.value="";render();q.focus()};
+
+  window.addEventListener("beforeprint",function(){document.body.classList.add("cites")});
+  window.addEventListener("afterprint",function(){if(!$("#citeToggle").checked)document.body.classList.remove("cites")});
+})();
+</script>
+</body>
+</html>
